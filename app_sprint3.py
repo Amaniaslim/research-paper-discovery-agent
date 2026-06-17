@@ -608,13 +608,15 @@ def _render_export() -> None:
         EXPORT_PATH.write_text(markdown, encoding="utf-8")
         st.success(f"Export geschrieben: {EXPORT_PATH.relative_to(PROJECT_DIR).as_posix()}")
 
-    st.download_button(
-        "Markdown herunterladen",
-        data=markdown,
-        file_name="sprint3_pdf_rag_answer.md",
-        mime="text/markdown",
-        use_container_width=True,
-    )
+    button_col, _spacer_col = st.columns([1, 1.3])
+    with button_col:
+        st.download_button(
+            "Markdown herunterladen",
+            data=markdown,
+            file_name="sprint3_pdf_rag_answer.md",
+            mime="text/markdown",
+            use_container_width=True,
+        )
 
     with st.expander("Preview Markdown anzeigen", expanded=False):
         st.markdown(markdown)
@@ -625,10 +627,10 @@ def _render_export_summary(review, answer: str, chunks: list[dict]) -> None:
     items = [
         ("Exportstatus", status),
         ("Format", "Markdown"),
-        ("Paper Discovery Results", "✓" if review else "–"),
-        ("Ranking", "✓" if review else "–"),
-        ("PDF-RAG Antwort", "✓" if answer else "–"),
-        ("Quellen mit Seitenangaben", "✓" if chunks else "–"),
+        ("Paper Discovery Results", "Verfügbar" if review else "Nicht verfügbar"),
+        ("Ranking", "Verfügbar" if review else "Nicht verfügbar"),
+        ("PDF-RAG Antwort", "Verfügbar" if answer else "Nicht verfügbar"),
+        ("Quellen mit Seitenangaben", "Verfügbar" if chunks else "Nicht verfügbar"),
     ]
     st.markdown("#### Export-Übersicht")
     for label, value in items:
