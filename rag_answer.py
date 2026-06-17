@@ -54,7 +54,11 @@ def _call_saia(question: str, chunks: list[dict]) -> str:
         "PDF-Quellen werden folgende Punkte genannt:' If the sources do not support a point, "
         "do not infer it. Connect every substantive statement to a source reference in this "
         "format: [PDF name, page X]. Do not write that the documents contain no further "
-        "specific risks.\n\n"
+        "specific risks. If the question is about RAG, retrieval, vector databases, database "
+        "execution, or embeddings, mention source-supported RAG controls first, especially "
+        "access controls for vector databases, post-retrieval filtering, content verification "
+        "before embedding, and rate-limiting. Mention general security measures only as "
+        "additional points when they are supported by the sources.\n\n"
         f"Question: {question}\n\n"
         f"Sources:\n{sources}"
     )
@@ -96,7 +100,10 @@ def _fallback_answer(question: str, chunks: list[dict]) -> str:
         f"Frage: {question}",
         "",
     ]
-    for index, chunk in enumerate(chunks, start=1):
+    ordered_chunks = _prioritize_answer_chunks(question, chunks)
+    if _is_rag_question(question):
+        lines.extend(_rag_control_lines(ordered_chunks))
+    for index, chunk in enumerate(ordered_chunks, start=1):
         text = chunk["text"]
         preview = _short_preview(text, limit=520)
         lines.extend(
@@ -116,6 +123,76 @@ def _short_preview(text: str, limit: int) -> str:
     if len(clean_text) <= limit:
         return clean_text
     return clean_text[:limit].rsplit(" ", 1)[0] + "..."
+
+
+def _prioritize_answer_chunks(question: str, chunks: list[dict]) -> list[dict]:
+    if not _is_rag_question(question):
+        return chunks
+    return sorted(chunks, key=lambda chunk: _rag_control_score(chunk.get("text", "")), reverse=True)
+
+
+def _rag_control_lines(chunks: list[dict]) -> list[str]:
+    lines = []
+    matched_controls = []
+    for label, phrases in _RAG_CONTROL_PHRASES:
+        chunk = _first_chunk_matching(chunks, phrases)
+        if chunk is not None:
+            matched_controls.append(
+                f"- {label} [{chunk['pdf_name']}, page {chunk['page_number']}]"
+            )
+    if matched_controls:
+        lines.extend(
+            [
+                "Spezifische RAG-/Retrieval-Kontrollen aus den gefundenen Quellen:",
+                *matched_controls,
+                "",
+                "Ergänzende Auszüge aus den Top-Quellen:",
+                "",
+            ]
+        )
+    return lines
+
+
+def _first_chunk_matching(chunks: list[dict], phrases: tuple[str, ...]) -> dict | None:
+    for chunk in chunks:
+        lower_text = chunk.get("text", "").lower()
+        if any(phrase in lower_text for phrase in phrases):
+            return chunk
+    return None
+
+
+def _rag_control_score(text: str) -> int:
+    lower_text = text.lower()
+    return sum(
+        1
+        for _label, phrases in _RAG_CONTROL_PHRASES
+        for phrase in phrases
+        if phrase in lower_text
+    )
+
+
+def _is_rag_question(question: str) -> bool:
+    lower_question = question.lower()
+    return any(trigger in lower_question for trigger in _RAG_QUERY_TRIGGERS)
+
+
+_RAG_QUERY_TRIGGERS = {
+    "rag",
+    "retrieval",
+    "vector database",
+    "vector databases",
+    "database execution",
+    "embedding",
+    "embeddings",
+}
+
+
+_RAG_CONTROL_PHRASES = (
+    ("Access Controls für Vector Databases", ("access control", "access controls", "vector database", "vector databases")),
+    ("Post-Retrieval Filtering", ("post-retrieval filtering", "retrieval filtering", "filter retrieved")),
+    ("Content Verification vor Embedding", ("content verification", "before embedding", "verify content", "verified before embedding")),
+    ("Rate-Limiting", ("rate-limiting", "rate limiting", "rate limit")),
+)
 
 
 def _saia_enabled() -> bool:

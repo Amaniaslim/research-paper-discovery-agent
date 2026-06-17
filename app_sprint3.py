@@ -534,10 +534,25 @@ def _render_sources_preview(expanded_first: bool = False) -> None:
 
 
 def _chunk_excerpt(text: str, limit: int = 650) -> str:
-    clean_text = " ".join((text or "").split())
+    clean_text = _start_at_sentence_boundary(" ".join((text or "").split()))
     if len(clean_text) <= limit:
         return clean_text
     return clean_text[:limit].rsplit(" ", 1)[0] + "..."
+
+
+def _start_at_sentence_boundary(text: str) -> str:
+    if not text:
+        return text
+    clean_text = text.lstrip(" .,:;)-]")
+    if len(clean_text) < 40:
+        return clean_text
+    for marker in (". ", "? ", "! "):
+        position = clean_text.find(marker)
+        if 0 <= position <= 180 and position + len(marker) < len(clean_text):
+            candidate = clean_text[position + len(marker):].lstrip()
+            if candidate:
+                return candidate
+    return clean_text
 
 
 def _render_memory() -> None:
