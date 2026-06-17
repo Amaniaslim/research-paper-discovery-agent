@@ -1,13 +1,23 @@
 .venv/
 .env
 __pycache__/
+*.pyc
 *.py[cod]
 *.log
+.DS_Store
 
-demo_output/chroma_memory/
-demo_output/review.md
-demo_output/literature_review.md
-demo_output/sprint2_review.md
-demo_output/sprint1_memory.json
-demo_output/memory.json
-demo_output/*streamlit*.log
+# Local environments and tooling
+venv/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local runtime data and secrets
+chroma_db/
+exports/
+memory/
+demo_output/
+
+data/pdfs/*.pdf
+!data/pdfs/.gitkeep

@@ -1,76 +1,156 @@
-# Sprint 2 - Research Paper Discovery Agent
+# Research Paper Discovery Agent
 
-This project is a Streamlit demo for a research agent that finds, ranks,
-summarizes, remembers, and exports papers for a research question.
+Sprint-based educational prototype for scientific literature discovery around
+Agentic AI Security. The project helps users find papers, rank them, summarize
+abstracts, remember previous research runs, and ask source-grounded questions
+against uploaded PDF full texts.
 
-## What The Agent Does
+The agent supports the first research overview. It does not replace reading,
+evaluating, or citing scientific papers carefully.
 
-1. The user enters a research question.
-2. The agent expands common German query terms into English search terms.
-3. It tries live retrieval from arXiv.
-4. If arXiv does not return stable results, it tries Semantic Scholar.
-5. If live APIs fail, it uses the local cache or embedded demo papers.
-6. It normalizes title, authors, year, abstract, source, URL, and score.
-7. It deduplicates papers by stable IDs.
-8. It ranks papers by title matches, abstract matches, topic relevance, and recency.
-9. It generates short heuristic summaries from abstracts.
-10. It stores previous research runs in ChromaDB, with JSON as fallback.
-11. It exports a Markdown review.
+## Features
 
-## Technologies
+- Streamlit demo UI for Sprint 2 and Sprint 3 workflows
+- Offline demo data for stable Sprint 1 fallback behavior
+- Live paper search via arXiv with Semantic Scholar fallback
+- Local cache and embedded demo-paper fallback for reliable demos
+- Metadata normalization and deduplication
+- Transparent rule-based ranking
+- Abstract-based heuristic summaries, with optional SAIA summaries
+- ChromaDB memory with JSON fallback
+- Markdown export for literature-review results
+- Sprint 3 PDF-RAG prototype:
+  - PDF upload
+  - page-wise text extraction with PyMuPDF
+  - text chunking with page metadata
+  - ChromaDB chunk storage with JSON fallback
+  - chunk retrieval for user questions
+  - optional SAIA answer generation
+  - fallback answer from retrieved chunks
+  - source display with PDF name and page number
 
-- Python
-- Streamlit
-- arXiv API
-- Semantic Scholar API
-- ChromaDB
-- JSON cache
-- Markdown export
+## Sprint Overview
 
-## Project Files
+### Sprint 1
 
-| File | Purpose |
-| --- | --- |
-| `app.py` | Streamlit user interface |
-| `paper_research_agent.py` | Sprint 2 retrieval, ranking, fallback, and export workflow |
-| `review_core.py` | Shared paper models, demo papers, ranking helpers, and summaries |
-| `memory_store.py` | ChromaDB memory with JSON fallback |
-| `sprint1_app.py` | Optional old Sprint 1 UI kept for reference |
-| `SPRINT1_NOTES.md` | Sprint 1 documentation kept for context |
-| `demo_output/paper_cache.json` | Optional local paper cache for stable demos |
+Offline MVP with saved paper data, research-question input, paper ranking,
+abstract summaries, ChromaDB memory, and Markdown export. The goal was a stable
+and reproducible demo without API or network risk.
 
-## Setup
+### Sprint 2
+
+Live Search & Retrieve workflow. The agent queries arXiv, falls back to Semantic
+Scholar, then falls back to local cache or demo data. It normalizes fields,
+deduplicates papers, ranks them transparently, stores research runs in memory,
+and exports a Markdown review.
+
+### Sprint 3
+
+PDF-RAG prototype. The agent uploads PDFs, extracts page-wise text, chunks the
+text, stores chunks in ChromaDB, retrieves relevant chunks for a question, and
+generates an answer with PDF name and page references. LLM answer generation is
+optional and falls back to retrieved chunks if no API key is configured.
+
+## Installation
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-## Run The App
+## Run
+
+Sprint 2 app:
 
 ```powershell
 .\.venv\Scripts\python.exe -m streamlit run .\app.py
 ```
 
+Sprint 3 PDF-RAG app:
+
+```powershell
+.\.venv\Scripts\python.exe -m streamlit run .\app_sprint3.py
+```
+
 If port `8501` is already used:
 
 ```powershell
-.\.venv\Scripts\python.exe -m streamlit run .\app.py --server.port 8502
+.\.venv\Scripts\python.exe -m streamlit run .\app_sprint3.py --server.port 8502
 ```
 
-## Run From Terminal
-
-```powershell
-.\.venv\Scripts\python.exe .\paper_research_agent.py
-```
-
-Offline/cache fallback mode:
+Command-line Sprint 2 review:
 
 ```powershell
 .\.venv\Scripts\python.exe .\paper_research_agent.py --offline
 ```
 
-## Current Limits
+## Environment Variables
 
-Sprint 2 works with paper metadata and abstracts. It does not yet analyze full
-PDFs, use full-text RAG, or generate LLM-based summaries.
+Copy `.env.example` to `.env` and add your own keys if needed.
+
+```env
+SAIA_API_KEY=your_api_key_here
+SEMANTIC_SCHOLAR_API_KEY=optional_key_here
+```
+
+No API key is required for the offline fallback demo. Do not commit `.env`.
+
+## Project Structure
+
+```text
+research-paper-discovery-agent/
+|-- app.py
+|-- app_sprint3.py
+|-- paper_research_agent.py
+|-- review_core.py
+|-- memory_store.py
+|-- pdf_loader.py
+|-- chunking.py
+|-- rag_store.py
+|-- rag_retriever.py
+|-- rag_answer.py
+|-- data/
+|   `-- pdfs/
+|-- demo_output/
+|-- docs/
+|-- tests/
+|-- requirements.txt
+|-- .env.example
+`-- .gitignore
+```
+
+The files currently remain at repository root to keep the existing sprint apps
+simple and executable. A future refactor can move core modules into `src/`.
+
+## Tests
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest
+```
+
+Additional smoke check:
+
+```powershell
+.\.venv\Scripts\python.exe .\demo_smoke_check.py
+```
+
+## Limitations
+
+- PDF-RAG works best with text-based PDFs.
+- Scanned PDFs are not supported yet because OCR is not implemented.
+- Ranking is transparent and rule-based, not ML-based.
+- Local embeddings are simple and deterministic for demo stability.
+- Real semantic embeddings are future work.
+- LLM answer generation depends on API configuration.
+- The agent supports early literature exploration, not final scientific judgment.
+
+See [docs/limitations.md](docs/limitations.md) for more detail.
+
+## Future Work
+
+- Dedicated semantic embedding API
+- OCR for scanned PDFs
+- Better citation and bibliography extraction
+- Stronger evaluation tests for retrieval quality
+- Optional APA/BibTeX export polish
+- Refactor core modules into a `src/` package
