@@ -106,7 +106,7 @@ def _fallback_answer(question: str, chunks: list[dict]) -> str:
             ]
         )
     lines.append(
-        "Hinweis: Diese Antwort basiert nur auf den gefundenen Top-Quellen und erhebt keinen Anspruch auf Vollstaendigkeit."
+        "Hinweis: Die Antwort basiert auf den gefundenen Top-Quellen und ist keine vollständige Analyse des gesamten Dokuments."
     )
     return "\n".join(lines).strip()
 

@@ -265,24 +265,27 @@ def _render_paper_details(review, limit: int | None = None) -> None:
     papers = review.papers[:limit] if limit else review.papers
     for rank, paper in enumerate(papers, start=1):
         summary = summaries_by_id.get(paper.id)
-        with st.expander(f"{rank}. {paper.title or 'No title available'}", expanded=rank == 1):
-            meta_cols = st.columns(4)
-            meta_cols[0].metric("Score", paper.relevance_score)
-            meta_cols[1].metric("Year", paper.year or "n/a")
-            meta_cols[2].metric("Source", paper.source or "n/a")
-            meta_cols[3].metric("Citations", paper.citations or 0)
+        st.markdown(f"**{rank}. {paper.title or 'No title available'}**")
+        meta_cols = st.columns(4)
+        meta_cols[0].metric("Score", paper.relevance_score)
+        meta_cols[1].metric("Jahr", paper.year or "n/a")
+        meta_cols[2].metric("Quelle", paper.source or "n/a")
+        if paper.url:
+            meta_cols[3].link_button("Link", paper.url)
+        else:
+            meta_cols[3].metric("Link", "n/a")
+
+        with st.expander("Details anzeigen", expanded=False):
             st.markdown("**Warum ist dieses Paper relevant?**")
             st.caption(_score_explanation(review.query, paper))
             st.markdown("**Abstract**")
-            st.write(_short_text(paper.abstract or "No abstract available.", limit=850))
+            st.write(_short_text(paper.abstract or "No abstract available.", limit=650))
             if summary:
                 st.markdown("**Kurz-Zusammenfassung**")
-                st.write(summary.contribution)
+                st.write(_short_text(summary.contribution, limit=450))
                 if summary.limitations:
                     st.markdown("**Limitationen aus Abstract**")
                     st.write("; ".join(summary.limitations))
-            if paper.url:
-                st.link_button("Paper Link öffnen", paper.url)
 
 
 def _render_pdf_rag_demo() -> None:
@@ -543,7 +546,7 @@ def _render_memory() -> None:
         "Sprint 1 und 2 speichern Research Runs. In Sprint 3 bleibt diese Memory erhalten, "
         "damit fruehere Recherchen wiedergefunden werden koennen."
     )
-    st.caption(f"Active storage: {memory.memory_backend()}")
+    st.caption(f"Active storage: {_relative_backend_label(memory.memory_backend())}")
     recall_query = st.text_input(
         "Memory durchsuchen",
         value=st.session_state.get("research_query", pipeline.DEFAULT_QUERY),
@@ -577,16 +580,18 @@ def _render_export() -> None:
     question = st.session_state.get("pdf_question", "")
     answer = st.session_state.get("pdf_answer", "")
     chunks = st.session_state.get("retrieved_chunks", [])
-    discovery_markdown = st.session_state.get("markdown", "")
-    if not answer and not discovery_markdown:
+    review = st.session_state.get("review")
+    if not answer and review is None:
         st.info("Starte zuerst die Paper-Suche oder stelle eine PDF-Frage. Danach ist der Export verfuegbar.")
         return
 
-    markdown = _build_export_markdown(question, answer, chunks, discovery_markdown)
+    markdown = _build_export_markdown(question, answer, chunks, review)
+    _render_export_summary(review, answer, chunks)
+
     if st.button("Markdown Export schreiben", type="primary"):
         EXPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
         EXPORT_PATH.write_text(markdown, encoding="utf-8")
-        st.success(f"Export written to {EXPORT_PATH}")
+        st.success(f"Export geschrieben: {EXPORT_PATH.relative_to(PROJECT_DIR).as_posix()}")
 
     st.download_button(
         "Markdown herunterladen",
@@ -596,35 +601,75 @@ def _render_export() -> None:
         use_container_width=True,
     )
 
-    with st.expander("Preview Markdown"):
+    with st.expander("Preview Markdown anzeigen", expanded=False):
         st.markdown(markdown)
+
+
+def _render_export_summary(review, answer: str, chunks: list[dict]) -> None:
+    status = "bereit" if review or answer else "noch nicht bereit"
+    items = [
+        ("Exportstatus", status),
+        ("Format", "Markdown"),
+        ("Paper Discovery Results", "✓" if review else "–"),
+        ("Ranking", "✓" if review else "–"),
+        ("PDF-RAG Antwort", "✓" if answer else "–"),
+        ("Quellen mit Seitenangaben", "✓" if chunks else "–"),
+    ]
+    st.markdown("#### Export-Übersicht")
+    for label, value in items:
+        st.markdown(f"- **{label}:** {value}")
 
 
 def _build_export_markdown(
     question: str,
     answer: str,
     chunks: list[dict],
-    discovery_markdown: str = "",
+    review=None,
 ) -> str:
     lines = [
         "# Sprint 3 Research Paper Discovery Agent",
         "",
+        "## Export Info",
+        "",
         f"- Exported at: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}",
         f"- Antwortmodus: {st.session_state.get('answer_mode', 'unknown')}",
-        "- Sprint 1 basis: Offline MVP, ranking, memory, Markdown export",
-        "- Sprint 2 basis: Live search, fallback, ranking, memory",
+        "- Sprint 1 basis: Offline MVP, Ranking, Memory, Markdown Export",
+        "- Sprint 2 basis: Live Search, Fallback, Ranking, Memory",
         "- Sprint 3 extension: PDF full-text retrieval and grounded answers",
         "",
     ]
-    if discovery_markdown:
+
+    if review is not None:
         lines.extend(
             [
                 "## Paper Discovery Result",
                 "",
-                discovery_markdown,
+                "### Query",
+                "",
+                review.query,
+                "",
+                "### Top Ranked Papers",
+                "",
+                "| Rank | Title | Year | Score | Source |",
+                "|------|-------|------|-------|--------|",
+            ]
+        )
+        for rank, paper in enumerate(review.papers, start=1):
+            lines.append(
+                "| "
+                f"{rank} | {_md_cell(paper.title or 'No title available')} | "
+                f"{paper.year or 'n/a'} | {paper.relevance_score} | "
+                f"{_md_cell(paper.source or 'n/a')} |"
+            )
+        lines.extend(
+            [
+                "",
+                "## PDF-RAG Result",
                 "",
             ]
         )
+    else:
+        lines.extend(["## PDF-RAG Result", ""])
 
     if not answer:
         return "\n".join(lines)
@@ -646,15 +691,47 @@ def _build_export_markdown(
     for index, chunk in enumerate(chunks, start=1):
         lines.extend(
             [
-                f"### {index}. {chunk['pdf_name']} - page {chunk['page_number']}",
-                "",
-                f"- Chunk ID: {chunk['chunk_id']}",
-                "",
-                chunk["text"],
+                f"{index}. PDF: {chunk.get('pdf_name', 'unknown.pdf')}",
+                f"   Page: {chunk.get('page_number', 'n/a')}",
+                f"   Chunk: {chunk.get('chunk_id', 'n/a')}",
+                f"   Excerpt: {_chunk_excerpt(chunk.get('text', ''), limit=650)}",
                 "",
             ]
         )
+    if review is not None:
+        lines.extend(["## Detailed Paper Notes", ""])
+        summaries_by_id = {summary.paper_id: summary for summary in review.summaries}
+        for rank, paper in enumerate(review.papers, start=1):
+            summary = summaries_by_id.get(paper.id)
+            lines.extend(
+                [
+                    f"### {rank}. {paper.title or 'No title available'}",
+                    "",
+                    f"- Score: {paper.relevance_score}",
+                    f"- Year: {paper.year or 'n/a'}",
+                    f"- Source: {paper.source or 'n/a'}",
+                    f"- URL: {paper.url or 'n/a'}",
+                    "",
+                    f"**Abstract excerpt:** {_short_text(paper.abstract or 'No abstract available.', limit=700)}",
+                    "",
+                ]
+            )
+            if summary:
+                lines.extend(
+                    [
+                        f"**Summary:** {_short_text(summary.contribution, limit=450)}",
+                        "",
+                    ]
+                )
     return "\n".join(lines)
+
+
+def _md_cell(value: str) -> str:
+    return " ".join(str(value).replace("|", "\\|").split())
+
+
+def _relative_backend_label(label: str) -> str:
+    return label.replace(str(PROJECT_DIR), "").replace("\\", "/").replace("(/", "(")
 
 
 def _source_label(review) -> str:

@@ -34,4 +34,4 @@ def test_answer_fallback_without_api_key(monkeypatch) -> None:
     assert result["mode"] == "fallback"
     assert "Auf Basis der gefundenen PDF-Quellen" in result["answer"]
     assert "[paper.pdf, page 2]" in result["answer"]
-    assert "Vollstaendigkeit" in result["answer"]
+    assert "keine vollständige Analyse des gesamten Dokuments" in result["answer"]
