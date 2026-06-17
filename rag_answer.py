@@ -21,7 +21,10 @@ def generate_answer(question: str, chunks: list[dict]) -> dict:
     """Generate a source-grounded answer from retrieved PDF chunks."""
     if not chunks:
         return {
-            "answer": "The indexed documents do not contain enough information to answer this question.",
+            "answer": (
+                "Auf Basis der gefundenen PDF-Quellen kann diese Frage nicht beantwortet werden. "
+                "Es wurden keine passenden Textstellen im Index gefunden."
+            ),
             "mode": "no_sources",
         }
 
@@ -46,9 +49,12 @@ def _call_saia(question: str, chunks: list[dict]) -> str:
         for index, chunk in enumerate(chunks, start=1)
     )
     prompt = (
-        "Answer only based on the provided sources. If the answer is not in the sources, "
-        "say that the documents do not contain enough information. Include source references "
-        "in the answer in this format: [PDF name, page X].\n\n"
+        "Answer only based on the provided sources. Do not claim completeness, because only "
+        "the top retrieved chunks are available. Start with: 'Auf Basis der gefundenen "
+        "PDF-Quellen werden folgende Punkte genannt:' If the sources do not support a point, "
+        "do not infer it. Connect every substantive statement to a source reference in this "
+        "format: [PDF name, page X]. Do not write that the documents contain no further "
+        "specific risks.\n\n"
         f"Question: {question}\n\n"
         f"Sources:\n{sources}"
     )
@@ -57,7 +63,10 @@ def _call_saia(question: str, chunks: list[dict]) -> str:
         "messages": [
             {
                 "role": "system",
-                "content": "You are a careful PDF-RAG assistant. Use only the provided sources.",
+                "content": (
+                    "You are a careful PDF-RAG assistant. Use only the provided sources, "
+                    "write cautiously, and avoid completeness claims."
+                ),
             },
             {"role": "user", "content": prompt},
         ],
@@ -82,22 +91,31 @@ def _call_saia(question: str, chunks: list[dict]) -> str:
 
 def _fallback_answer(question: str, chunks: list[dict]) -> str:
     lines = [
-        "SAIA is not available, so this fallback lists the most relevant retrieved PDF chunks.",
+        "Auf Basis der gefundenen PDF-Quellen werden folgende Punkte genannt:",
         "",
-        f"Question: {question}",
+        f"Frage: {question}",
         "",
     ]
     for index, chunk in enumerate(chunks, start=1):
         text = chunk["text"]
-        preview = text[:700].rsplit(" ", 1)[0] + ("..." if len(text) > 700 else "")
+        preview = _short_preview(text, limit=520)
         lines.extend(
             [
-                f"{index}. [{chunk['pdf_name']}, page {chunk['page_number']}]",
-                preview,
+                f"{index}. {preview} [{chunk['pdf_name']}, page {chunk['page_number']}]",
                 "",
             ]
         )
+    lines.append(
+        "Hinweis: Diese Antwort basiert nur auf den gefundenen Top-Quellen und erhebt keinen Anspruch auf Vollstaendigkeit."
+    )
     return "\n".join(lines).strip()
+
+
+def _short_preview(text: str, limit: int) -> str:
+    clean_text = " ".join(text.split())
+    if len(clean_text) <= limit:
+        return clean_text
+    return clean_text[:limit].rsplit(" ", 1)[0] + "..."
 
 
 def _saia_enabled() -> bool:

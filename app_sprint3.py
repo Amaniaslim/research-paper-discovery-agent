@@ -512,11 +512,29 @@ def _render_sources_preview(expanded_first: bool = False) -> None:
     st.markdown("### Gefundene Quellen")
     for index, chunk in enumerate(chunks, start=1):
         with st.expander(
-            f"{index}. {chunk['pdf_name']} - page {chunk['page_number']} - {chunk['chunk_id']}",
+            f"Quelle {index}",
             expanded=expanded_first and index == 1,
         ):
-            st.caption(f"PDF: {chunk['pdf_name']} | Page: {chunk['page_number']} | Chunk: {chunk['chunk_id']}")
-            st.write(chunk["text"])
+            st.markdown(
+                f"""
+                <div class="source-card">
+                    <div><strong>PDF:</strong> {html.escape(str(chunk.get("pdf_name", "unknown.pdf")))}</div>
+                    <div><strong>Seite:</strong> {html.escape(str(chunk.get("page_number", "n/a")))}</div>
+                    <div><strong>Chunk:</strong> {html.escape(str(chunk.get("chunk_id", "n/a")))}</div>
+                    <div class="source-excerpt"><strong>Auszug:</strong> {html.escape(_chunk_excerpt(chunk.get("text", "")))}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            with st.expander("Vollständigen Chunk anzeigen", expanded=False):
+                st.write(chunk.get("text", ""))
+
+
+def _chunk_excerpt(text: str, limit: int = 650) -> str:
+    clean_text = " ".join((text or "").split())
+    if len(clean_text) <= limit:
+        return clean_text
+    return clean_text[:limit].rsplit(" ", 1)[0] + "..."
 
 
 def _render_memory() -> None:
@@ -1089,6 +1107,29 @@ def _inject_styles() -> None:
                 color: #344054;
                 line-height: 1.45;
                 padding-top: 3px;
+            }
+
+            .source-card {
+                background: #ffffff;
+                border: 1px solid #dde5ec;
+                border-left: 5px solid #8fb3d9;
+                border-radius: 8px;
+                color: #344054;
+                display: grid;
+                gap: 8px;
+                padding: 14px 16px;
+                box-shadow: 0 1px 2px rgba(16, 24, 32, 0.03);
+            }
+
+            .source-card strong {
+                color: #101820;
+            }
+
+            .source-excerpt {
+                border-top: 1px solid #edf2f7;
+                line-height: 1.5;
+                margin-top: 4px;
+                padding-top: 10px;
             }
 
             .demo-banner {
