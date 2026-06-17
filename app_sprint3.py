@@ -25,7 +25,7 @@ EXPORT_PATH = PROJECT_DIR / "demo_output" / "sprint3_pdf_rag_answer.md"
 
 
 def main() -> None:
-    st.set_page_config(page_title="PDF RAG - Research Agent", layout="wide")
+    st.set_page_config(page_title="PDF-RAG Research Agent", layout="wide")
     _inject_styles()
 
     pdf_count = len(_list_pdfs())
@@ -35,12 +35,12 @@ def main() -> None:
         <section class="app-hero">
             <div>
                 <div class="eyebrow">Sprint 3</div>
-                <h1>PDF RAG Research Agent</h1>
-                <p>Von der Live-Paper-Suche zum PDF-Volltext: finde Paper, pruefe das Ranking und stelle danach Fragen mit konkreten Quellen.</p>
+                <h1>PDF-RAG Research Agent</h1>
+                <p>Von der Live-Paper-Suche zum PDF-Volltext: Finde Paper, prüfe das Ranking und stelle danach Fragen mit konkreten Quellen.</p>
             </div>
             <div class="hero-meta">
                 <span>{pdf_count} PDFs</span>
-                <span>{chunk_count} chunks</span>
+                <span>{chunk_count} Index-Chunks</span>
                 <span>{html.escape(rag_store.storage_backend())}</span>
             </div>
         </section>
@@ -66,7 +66,7 @@ def main() -> None:
         )
         st.divider()
         st.caption(f"Storage backend: {rag_store.storage_backend()}")
-        st.caption(f"PDF folder: {PDF_DIR.relative_to(PROJECT_DIR)}")
+        st.caption(f"PDF folder: {PDF_DIR.relative_to(PROJECT_DIR).as_posix()}")
 
     tabs = st.tabs(
         [
@@ -143,10 +143,10 @@ def _render_overview() -> None:
     st.markdown(
         """
         <div class="workflow-list">
-            <div><b>1</b><span>Paper-Suche starten und Ranking prüfen.</span></div>
-            <div><b>2</b><span>Im PDF-RAG Demo Tab ein PDF hochladen.</span></div>
-            <div><b>3</b><span>Index bauen und eine Frage an den Volltext stellen.</span></div>
-            <div><b>4</b><span>Quellen prüfen und Markdown exportieren.</span></div>
+            <div><b>1.</b><span>Paper-Suche starten und Ranking prüfen.</span></div>
+            <div><b>2.</b><span>Im PDF-RAG Demo Tab ein PDF hochladen.</span></div>
+            <div><b>3.</b><span>Index bauen und eine Frage an den Volltext stellen.</span></div>
+            <div><b>4.</b><span>Quellen prüfen und Markdown exportieren.</span></div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -162,7 +162,7 @@ def _next_step_label(review, pdfs: list[Path], chunks: list[dict]) -> str:
         return "PDF indexieren"
     if not st.session_state.get("pdf_answer"):
         return "Frage an die indexierten PDFs stellen"
-    return "Quellen pruefen und Antwort exportieren"
+    return "Quellen prüfen und Antwort exportieren"
 
 
 def _render_discovery_tab() -> None:
@@ -292,13 +292,13 @@ def _render_pdf_rag_demo() -> None:
     step_cols = st.columns(4)
     pdfs = _list_pdfs()
     chunks = rag_store.load_all_chunks()
-    step_cols[0].metric("Step 1", "PDF bereit" if pdfs else "Upload PDF")
-    step_cols[1].metric("Step 2", "Index bereit" if chunks else "Build Index")
-    step_cols[2].metric("Step 3", "Antwort bereit" if st.session_state.get("pdf_answer") else "Ask Question")
-    step_cols[3].metric("Step 4", "Quellen", str(len(st.session_state.get("retrieved_chunks", []))))
+    step_cols[0].metric("Schritt 1", "PDF bereit" if pdfs else "PDF hochladen")
+    step_cols[1].metric("Schritt 2", "Index bereit" if chunks else "Index bauen")
+    step_cols[2].metric("Schritt 3", "Antwort bereit" if st.session_state.get("pdf_answer") else "Frage stellen")
+    step_cols[3].metric("Schritt 4", "Quellen", str(len(st.session_state.get("retrieved_chunks", []))))
 
     st.divider()
-    st.markdown("### Step 1: Upload PDF")
+    st.markdown("### Schritt 1: PDF hochladen")
     _render_upload_controls(key_prefix="rag_demo_upload", boxed=True)
     pdfs = _list_pdfs()
     if pdfs:
@@ -307,11 +307,11 @@ def _render_pdf_rag_demo() -> None:
                 _render_file_status(pdf_path, status="bereit")
 
     st.divider()
-    st.markdown("### Step 2: Build Index")
+    st.markdown("### Schritt 2: Index bauen")
     _render_index_controls(key_prefix="rag_demo_index", compact=True, boxed=True)
 
     st.divider()
-    st.markdown("### Step 3: Ask Question")
+    st.markdown("### Schritt 3: Frage stellen")
     _render_question_controls(key_prefix="rag_demo_question", compact=True, boxed=True)
 
     answer = st.session_state.get("pdf_answer")
@@ -325,7 +325,7 @@ def _render_pdf_rag_demo() -> None:
         st.markdown(answer)
 
     st.divider()
-    st.markdown("### Step 4: View Sources")
+    st.markdown("### Schritt 4: Quellen anzeigen")
     chunks = st.session_state.get("retrieved_chunks", [])
     if chunks:
         _render_sources_preview(expanded_first=True)
@@ -386,7 +386,7 @@ def _render_index_controls(key_prefix: str, compact: bool, boxed: bool = True) -
             [
                 ("Indexierte PDFs", str(len(stats["pdfs"]))),
                 ("Seiten", str(stats["pages"])),
-                ("Chunks", str(stats["chunks"])),
+                ("Index-Chunks", str(stats["chunks"])),
                 ("Indexiert um", stats["indexed_at"]),
             ]
         )
@@ -592,7 +592,7 @@ def _build_export_markdown(
         "# Sprint 3 Research Paper Discovery Agent",
         "",
         f"- Exported at: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}",
-        f"- Answer mode: {st.session_state.get('answer_mode', 'unknown')}",
+        f"- Antwortmodus: {st.session_state.get('answer_mode', 'unknown')}",
         "- Sprint 1 basis: Offline MVP, ranking, memory, Markdown export",
         "- Sprint 2 basis: Live search, fallback, ranking, memory",
         "- Sprint 3 extension: PDF full-text retrieval and grounded answers",
@@ -613,15 +613,15 @@ def _build_export_markdown(
 
     lines.extend(
         [
-        "## Question",
+        "## Frage",
         "",
         question,
         "",
-        "## Answer",
+        "## Antwort",
         "",
         answer,
         "",
-        "## Sources",
+        "## Quellen",
         "",
         ]
     )
@@ -1052,6 +1052,43 @@ def _inject_styles() -> None:
                 background: #edf9f2;
                 border-color: #b9e4c9;
                 color: #247a49;
+            }
+
+            .workflow-list {
+                display: grid;
+                gap: 10px;
+                margin-top: 12px;
+            }
+
+            .workflow-list div {
+                align-items: flex-start;
+                background: #ffffff;
+                border: 1px solid #dde5ec;
+                border-radius: 8px;
+                display: grid;
+                grid-template-columns: 34px 1fr;
+                gap: 12px;
+                padding: 13px 15px;
+                box-shadow: 0 1px 2px rgba(16, 24, 32, 0.03);
+            }
+
+            .workflow-list b {
+                align-items: center;
+                background: #101820;
+                border-radius: 999px;
+                color: #ffffff;
+                display: flex;
+                font-size: 0.82rem;
+                font-weight: 800;
+                height: 28px;
+                justify-content: center;
+                width: 28px;
+            }
+
+            .workflow-list span {
+                color: #344054;
+                line-height: 1.45;
+                padding-top: 3px;
             }
 
             .demo-banner {
