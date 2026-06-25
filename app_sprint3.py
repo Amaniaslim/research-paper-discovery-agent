@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import html
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -319,12 +320,22 @@ def _render_pdf_rag_demo() -> None:
 
     answer = st.session_state.get("pdf_answer")
     if answer:
+        answer = _prepare_answer_for_display(answer, st.session_state.get("retrieved_chunks", []))
+        st.session_state["pdf_answer"] = answer
         st.markdown("### Antwort")
         mode = st.session_state.get("answer_mode", "unknown")
         st.markdown(
             f'<div class="status-box"><strong>Antwortmodus:</strong> {html.escape(mode)}</div>',
             unsafe_allow_html=True,
         )
+        short_answer = _build_short_answer(
+            st.session_state.get("pdf_question", ""),
+            answer,
+            st.session_state.get("retrieved_chunks", []),
+        )
+        st.markdown("#### Kurzantwort")
+        st.markdown(short_answer)
+        st.markdown("#### Details")
         st.markdown(answer)
 
     st.divider()
@@ -484,7 +495,7 @@ def _render_question_controls(key_prefix: str, compact: bool, boxed: bool = True
         answer_result = rag_answer.generate_answer(question, chunks)
         st.session_state["pdf_question"] = question
         st.session_state["retrieved_chunks"] = chunks
-        st.session_state["pdf_answer"] = answer_result["answer"]
+        st.session_state["pdf_answer"] = _prepare_answer_for_display(answer_result["answer"], chunks)
         st.session_state["answer_mode"] = answer_result["mode"]
 
 
@@ -514,30 +525,148 @@ def _render_sources_preview(expanded_first: bool = False) -> None:
         return
     st.markdown("### Gefundene Quellen")
     for index, chunk in enumerate(chunks, start=1):
+        source_title = _source_title(index, chunk)
+        excerpt = _chunk_excerpt(chunk.get("text", ""))
         with st.expander(
-            f"Quelle {index}",
+            source_title,
             expanded=expanded_first and index == 1,
         ):
             st.markdown(
                 f"""
                 <div class="source-card">
-                    <div><strong>PDF:</strong> {html.escape(str(chunk.get("pdf_name", "unknown.pdf")))}</div>
-                    <div><strong>Seite:</strong> {html.escape(str(chunk.get("page_number", "n/a")))}</div>
-                    <div><strong>Chunk:</strong> {html.escape(str(chunk.get("chunk_id", "n/a")))}</div>
-                    <div class="source-excerpt"><strong>Auszug:</strong> {html.escape(_chunk_excerpt(chunk.get("text", "")))}</div>
+                    <div class="source-card-title">{html.escape(source_title)}</div>
+                    <div class="source-meta-grid">
+                        <div><span>PDF</span><strong>{html.escape(str(chunk.get("pdf_name", "unknown.pdf")))}</strong></div>
+                        <div><span>Seite</span><strong>{html.escape(str(chunk.get("page_number", "n/a")))}</strong></div>
+                        <div><span>Chunk</span><strong>{html.escape(str(chunk.get("chunk_id", "n/a")))}</strong></div>
+                    </div>
+                    <div class="source-excerpt"><strong>Auszug:</strong> {html.escape(excerpt)}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
             with st.expander("Vollständigen Chunk anzeigen", expanded=False):
-                st.write(chunk.get("text", ""))
+                st.text(_clean_source_text(chunk.get("text", "")))
 
 
 def _chunk_excerpt(text: str, limit: int = 650) -> str:
-    clean_text = _start_at_sentence_boundary(" ".join((text or "").split()))
+    clean_text = _start_at_sentence_boundary(_clean_source_text(text))
     if len(clean_text) <= limit:
         return clean_text
     return clean_text[:limit].rsplit(" ", 1)[0] + "..."
+
+
+def _source_title(index: int, chunk: dict) -> str:
+    return (
+        f"Quelle {index} – Seite {chunk.get('page_number', 'n/a')} – "
+        f"Chunk {chunk.get('chunk_id', 'n/a')}"
+    )
+
+
+def _source_score_value(chunk: dict) -> float | None:
+    score = chunk.get("retrieval_score", chunk.get("score"))
+    if isinstance(score, (int, float)):
+        numeric_score = float(score)
+        if numeric_score > 0:
+            return numeric_score
+    return None
+
+
+def _format_source_score(chunk: dict) -> str:
+    score = _source_score_value(chunk)
+    if score is None:
+        return ""
+    return f"{score:.2f}"
+
+
+def _clean_incomplete_markdown(answer: str) -> str:
+    clean_answer = (answer or "").strip()
+    clean_answer = re.sub(r"\n?\s*\*\*[A-Za-zÄÖÜäöüß]{0,24}\s*$", "", clean_answer).rstrip()
+    if clean_answer.count("**") % 2:
+        clean_answer = re.sub(r"\s*\*\*[^*\n]{0,80}$", "", clean_answer).rstrip()
+    return clean_answer
+
+
+def _prepare_answer_for_display(answer: str, chunks: list[dict]) -> str:
+    clean_answer = _clean_incomplete_markdown(answer)
+    return _normalize_answer_source_references(clean_answer, chunks)
+
+
+def _normalize_answer_source_references(answer: str, chunks: list[dict]) -> str:
+    pdf_pages = {
+        str(chunk.get("pdf_name", "")): str(chunk.get("page_number", "n/a"))
+        for chunk in chunks
+        if chunk.get("pdf_name")
+    }
+    source_pages = {
+        str(index): (
+            str(chunk.get("pdf_name", "unknown.pdf")),
+            str(chunk.get("page_number", "n/a")),
+        )
+        for index, chunk in enumerate(chunks, start=1)
+    }
+
+    def normalize_reference(match: re.Match) -> str:
+        content = match.group(1).strip()
+        content = re.sub(r",?\s*page\s+(\d+)", r", Seite \1", content, flags=re.IGNORECASE)
+        if re.search(r"\bseite\s+\d+", content, flags=re.IGNORECASE):
+            return f"[{content}]"
+        source_match = re.fullmatch(r"(?:source|quelle)\s+(\d+)", content, flags=re.IGNORECASE)
+        if source_match:
+            pdf_name, page_number = source_pages.get(source_match.group(1), ("", ""))
+            if pdf_name and page_number.isdigit():
+                return f"[{pdf_name}, Seite {page_number}]"
+        for pdf_name, page_number in pdf_pages.items():
+            if pdf_name and pdf_name in content and str(page_number).isdigit():
+                return f"[{content}, Seite {page_number}]"
+        return f"[{content}]"
+
+    return re.sub(r"\[([^\]]+)\]", normalize_reference, answer)
+
+
+def _clean_source_text(text: str) -> str:
+    clean_text = html.unescape(str(text or ""))
+    clean_text = re.sub(r"<[^>]+>", " ", clean_text)
+    return " ".join(clean_text.split())
+
+
+def _build_short_answer(question: str, answer: str, chunks: list[dict]) -> str:
+    highlighted_terms = _extract_highlighted_terms(question, chunks)
+    if highlighted_terms:
+        return "Das Dokument nennt oder beschreibt " + ", ".join(highlighted_terms) + "."
+
+    for line in answer.splitlines():
+        clean_line = line.strip(" -")
+        if not clean_line:
+            continue
+        if clean_line.lower().startswith(("frage:", "hinweis:", "auf basis der gefundenen")):
+            continue
+        clean_line = clean_line.split("[", 1)[0].strip()
+        if clean_line:
+            return _short_text(clean_line, limit=320)
+
+    return "Die Kurzantwort basiert auf den gefundenen Top-Quellen im PDF."
+
+
+def _extract_highlighted_terms(question: str, chunks: list[dict]) -> list[str]:
+    lower_question = question.lower()
+    if not any(term in lower_question for term in ("risiko", "risk", "security", "sicherheit", "rag")):
+        return []
+
+    text = " ".join(str(chunk.get("text", "")).lower() for chunk in chunks)
+    candidates = [
+        ("RAG-Datenvergiftung", ("rag poisoning", "data poisoning", "datenvergiftung")),
+        ("SQL-Injection", ("sql injection", "sql-injection")),
+        ("unautorisierte Datenexposition", ("unauthorized data exposure", "unauthorised data exposure", "data exposure")),
+        ("Code-Injection", ("code injection", "code-injection")),
+        ("Prompt-Injection", ("prompt injection", "prompt-injection")),
+        ("Tool-Missbrauch", ("tool misuse", "tool abuse")),
+        ("Zugriffskontrollen fuer Vector Databases", ("access control", "access controls", "vector database", "vector databases")),
+        ("Post-Retrieval Filtering", ("post-retrieval filtering", "retrieval filtering")),
+        ("Content Verification vor Embedding", ("content verification", "before embedding")),
+        ("Rate-Limiting", ("rate-limiting", "rate limiting")),
+    ]
+    return [label for label, phrases in candidates if any(phrase in text for phrase in phrases)][:6]
 
 
 def _start_at_sentence_boundary(text: str) -> str:
@@ -619,16 +748,21 @@ def _render_export() -> None:
         )
 
     with st.expander("Preview Markdown anzeigen", expanded=False):
-        st.markdown(markdown)
+        st.code(markdown, language="markdown")
 
 
 def _render_export_summary(review, answer: str, chunks: list[dict]) -> None:
     status = "bereit" if review or answer else "noch nicht bereit"
+    discovery_status = "Verfügbar" if review else "Nicht verfügbar"
+    ranking_status = "Verfügbar" if review else "Nicht verfügbar"
+    if answer and review is None:
+        discovery_status = "Not used in PDF-RAG demo"
+        ranking_status = "Not used in PDF-RAG demo"
     items = [
         ("Exportstatus", status),
         ("Format", "Markdown"),
-        ("Paper Discovery Results", "Verfügbar" if review else "Nicht verfügbar"),
-        ("Ranking", "Verfügbar" if review else "Nicht verfügbar"),
+        ("Paper Discovery Results", discovery_status),
+        ("Ranking", ranking_status),
         ("PDF-RAG Antwort", "Verfügbar" if answer else "Nicht verfügbar"),
         ("Quellen mit Seitenangaben", "Verfügbar" if chunks else "Nicht verfügbar"),
     ]
@@ -643,12 +777,15 @@ def _build_export_markdown(
     chunks: list[dict],
     review=None,
 ) -> str:
+    exported_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    answer = _prepare_answer_for_display(answer, chunks)
+    has_source_scores = any(_source_score_value(chunk) is not None for chunk in chunks)
     lines = [
         "# Sprint 3 Research Paper Discovery Agent",
         "",
         "## Export Info",
         "",
-        f"- Exported at: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}",
+        f"- Exported at: {exported_at}",
         f"- Antwortmodus: {st.session_state.get('answer_mode', 'unknown')}",
         "- Sprint 1 basis: Offline MVP, Ranking, Memory, Markdown Export",
         "- Sprint 2 basis: Live Search, Fallback, Ranking, Memory",
@@ -693,25 +830,65 @@ def _build_export_markdown(
 
     lines.extend(
         [
-        "## Frage",
-        "",
-        question,
-        "",
-        "## Antwort",
-        "",
-        answer,
-        "",
-        "## Quellen",
-        "",
+            "## Frage",
+            "",
+            question,
+            "",
+            "## Kurzantwort",
+            "",
+            _build_short_answer(question, answer, chunks),
+            "",
+            "## Details",
+            "",
+            answer,
+            "",
+            "## Quellen",
+            "",
         ]
     )
-    for index, chunk in enumerate(chunks, start=1):
+    if has_source_scores:
         lines.extend(
             [
-                f"{index}. PDF: {chunk.get('pdf_name', 'unknown.pdf')}",
-                f"   Page: {chunk.get('page_number', 'n/a')}",
-                f"   Chunk: {chunk.get('chunk_id', 'n/a')}",
-                f"   Excerpt: {_chunk_excerpt(chunk.get('text', ''), limit=650)}",
+                "| Nr. | PDF | Seite | Chunk ID | Score |",
+                "|-----|-----|-------|----------|-------|",
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                "| Nr. | PDF | Seite | Chunk ID |",
+                "|-----|-----|-------|----------|",
+            ]
+        )
+    for index, chunk in enumerate(chunks, start=1):
+        row = (
+            "| "
+            f"{index} | {_md_cell(str(chunk.get('pdf_name', 'unknown.pdf')))} | "
+            f"{chunk.get('page_number', 'n/a')} | "
+            f"{_md_cell(str(chunk.get('chunk_id', 'n/a')))} |"
+        )
+        if has_source_scores:
+            row = row[:-1] + f" {_format_source_score(chunk)} |"
+        lines.append(row)
+    lines.append("")
+    lines.extend(["## Quellenauszuege", ""])
+    for index, chunk in enumerate(chunks, start=1):
+        score = _format_source_score(chunk)
+        source_meta = [
+            f"- PDF name: {chunk.get('pdf_name', 'unknown.pdf')}",
+            f"- Page number: {chunk.get('page_number', 'n/a')}",
+            f"- Chunk ID: {chunk.get('chunk_id', 'n/a')}",
+        ]
+        if score:
+            source_meta.append(f"- Score: {score}")
+        source_meta.append(f"- Timestamp: {exported_at}")
+        lines.extend(
+            [
+                f"### Quelle {index}",
+                "",
+                *source_meta,
+                "",
+                f"Excerpt: {_chunk_excerpt(chunk.get('text', ''), limit=650)}",
                 "",
             ]
         )
@@ -858,6 +1035,62 @@ def _inject_styles() -> None:
             h1, h2, h3, h4 {
                 color: #101820;
                 letter-spacing: 0;
+            }
+
+            div[data-testid="stMetric"] {
+                background: #ffffff;
+                border: 1px solid #d8e2eb;
+                border-radius: 8px;
+                padding: 12px 14px;
+                box-shadow: 0 1px 2px rgba(16, 24, 32, 0.05);
+            }
+
+            div[data-testid="stMetric"] label,
+            div[data-testid="stMetric"] label p {
+                color: #344054 !important;
+                font-weight: 800 !important;
+            }
+
+            div[data-testid="stMetricValue"],
+            div[data-testid="stMetricValue"] div {
+                color: #101820 !important;
+                font-weight: 850 !important;
+            }
+
+            details[data-testid="stExpander"] {
+                border-color: #cbd8e4 !important;
+                border-radius: 8px !important;
+            }
+
+            div[data-testid="stExpander"] details,
+            div[data-testid="stExpander"] {
+                border-color: #cbd8e4 !important;
+                border-radius: 8px !important;
+            }
+
+            details[data-testid="stExpander"] > summary {
+                background: #f7fafc !important;
+                border-radius: 8px 8px 0 0 !important;
+            }
+
+            div[data-testid="stExpander"] summary,
+            div[data-testid="stExpander"] button {
+                background: #f7fafc !important;
+                border-radius: 8px 8px 0 0 !important;
+            }
+
+            details[data-testid="stExpander"] > summary,
+            details[data-testid="stExpander"] > summary * {
+                color: #101820 !important;
+                font-weight: 800 !important;
+            }
+
+            div[data-testid="stExpander"] summary,
+            div[data-testid="stExpander"] summary *,
+            div[data-testid="stExpander"] button,
+            div[data-testid="stExpander"] button * {
+                color: #101820 !important;
+                font-weight: 800 !important;
             }
 
             .app-hero {
@@ -1205,25 +1438,64 @@ def _inject_styles() -> None:
 
             .source-card {
                 background: #ffffff;
-                border: 1px solid #dde5ec;
-                border-left: 5px solid #8fb3d9;
+                border: 1px solid #cbd8e4;
+                border-left: 6px solid #ef5b5b;
                 border-radius: 8px;
-                color: #344054;
+                color: #1f2933;
                 display: grid;
-                gap: 8px;
-                padding: 14px 16px;
-                box-shadow: 0 1px 2px rgba(16, 24, 32, 0.03);
+                gap: 12px;
+                padding: 16px 18px;
+                box-shadow: 0 8px 18px rgba(16, 24, 32, 0.08);
             }
 
             .source-card strong {
                 color: #101820;
             }
 
+            .source-card-title {
+                color: #101820;
+                font-size: 1rem;
+                font-weight: 850;
+                line-height: 1.3;
+            }
+
+            .source-meta-grid {
+                display: grid;
+                gap: 10px;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            .source-meta-grid div {
+                background: #f7fafc;
+                border: 1px solid #dde7ef;
+                border-radius: 6px;
+                min-height: 64px;
+                padding: 9px 10px;
+            }
+
+            .source-meta-grid span {
+                color: #667085;
+                display: block;
+                font-size: 0.72rem;
+                font-weight: 800;
+                margin-bottom: 5px;
+                text-transform: uppercase;
+            }
+
+            .source-meta-grid strong {
+                display: block;
+                font-size: 0.92rem;
+                line-height: 1.25;
+                overflow-wrap: anywhere;
+            }
+
             .source-excerpt {
                 border-top: 1px solid #edf2f7;
-                line-height: 1.5;
+                color: #344054;
+                font-size: 0.98rem;
+                line-height: 1.58;
                 margin-top: 4px;
-                padding-top: 10px;
+                padding-top: 12px;
             }
 
             .demo-banner {
@@ -1440,6 +1712,10 @@ def _inject_styles() -> None:
                     grid-column: 2;
                     justify-self: start;
                 }
+
+                .source-meta-grid {
+                    grid-template-columns: 1fr 1fr;
+                }
             }
 
             @media (max-width: 640px) {
@@ -1452,6 +1728,10 @@ def _inject_styles() -> None:
                 }
 
                 .workflow-strip {
+                    grid-template-columns: 1fr;
+                }
+
+                .source-meta-grid {
                     grid-template-columns: 1fr;
                 }
             }
