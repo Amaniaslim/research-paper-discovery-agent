@@ -13,7 +13,7 @@ def main() -> None:
     markdown = pipeline.to_markdown(review)
 
     assert review.papers, "Expected ranked papers."
-    assert "Sprint 2 Literature Review" in markdown
+    assert "Literature Review" in markdown
     assert "Paper-Liste" in markdown
     assert rag_store.storage_backend() in {"ChromaDB", "JSON fallback"}
 

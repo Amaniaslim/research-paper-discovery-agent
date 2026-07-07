@@ -5,26 +5,87 @@ import re
 import rag_store
 
 
-def search_relevant_chunks(question: str, top_k: int = 5) -> list[dict]:
-    """Retrieve relevant PDF chunks with ChromaDB, then JSON/keyword fallback."""
+def search_relevant_chunks(
+    question: str,
+    top_k: int = 5,
+    sections: list[str] | None = None,
+    neighbor_radius: int = 0,
+) -> list[dict]:
+    """Retrieve relevant PDF chunks with ChromaDB, then JSON/keyword fallback.
+
+    ``neighbor_radius`` optionally pulls in adjacent chunks on the same page for
+    more context, e.g. radius 1 adds p60-c0/p60-c2 around a retrieved p60-c1.
+    """
     clean_question = question.strip()
     if not clean_question:
         return []
 
-    search_limit = max(top_k * 4, top_k)
+    selected_sections = {section for section in (sections or []) if section and section != "Alle Sektionen"}
+    search_limit = max(top_k * 8, top_k)
     chroma_results = rag_store.query_chunks(clean_question, top_k=search_limit)
     if chroma_results:
         formatted = [_format_result(result) for result in chroma_results]
-        return _rank_formatted_results(clean_question, formatted)[:top_k]
+        formatted = _filter_by_sections(formatted, selected_sections)
+        ranked = _rank_formatted_results(clean_question, formatted)[:top_k]
+        return _expand_with_neighbors(ranked, neighbor_radius)
 
     entries = rag_store.load_all_chunks()
     scored = []
     for entry in entries:
+        metadata = entry.get("metadata", {})
+        if selected_sections and metadata.get("section", "Unbekannt") not in selected_sections:
+            continue
         score = _keyword_score(clean_question, entry.get("document", ""))
         if score:
             scored.append((score, entry))
     scored.sort(key=lambda item: item[0], reverse=True)
-    return [_format_result(entry, score=score) for score, entry in scored[:top_k]]
+    ranked = [_format_result(entry, score=score) for score, entry in scored[:top_k]]
+    return _expand_with_neighbors(ranked, neighbor_radius)
+
+
+_CHUNK_ID_PATTERN = re.compile(r"p(\d+)-c(\d+)")
+
+
+def _expand_with_neighbors(results: list[dict], neighbor_radius: int) -> list[dict]:
+    """Insert adjacent same-page chunks next to each retrieved result."""
+    if neighbor_radius <= 0 or not results:
+        return results
+
+    lookup: dict[tuple[str, str], dict] = {}
+    for entry in rag_store.load_all_chunks():
+        metadata = entry.get("metadata", {})
+        key = (str(metadata.get("pdf_name", "")), str(metadata.get("chunk_id", entry.get("id", ""))))
+        lookup[key] = entry
+
+    expanded: list[dict] = []
+    seen: set[tuple[str, str]] = set()
+    for result in results:
+        pdf_name = str(result.get("pdf_name", ""))
+        chunk_id = str(result.get("chunk_id", ""))
+        match = _CHUNK_ID_PATTERN.fullmatch(chunk_id)
+        neighbors_before: list[dict] = []
+        neighbors_after: list[dict] = []
+        if match:
+            page_no, chunk_no = int(match.group(1)), int(match.group(2))
+            for delta in range(-neighbor_radius, neighbor_radius + 1):
+                if delta == 0:
+                    continue
+                neighbor_id = f"p{page_no}-c{chunk_no + delta}"
+                key = (pdf_name, neighbor_id)
+                if key in seen or key not in lookup:
+                    continue
+                neighbor = _format_result(lookup[key])
+                neighbor["retrieval_score"] = round(float(result.get("retrieval_score", 0)) * 0.5, 4)
+                neighbor["is_context"] = True
+                seen.add(key)
+                (neighbors_before if delta < 0 else neighbors_after).append(neighbor)
+        expanded.extend(neighbors_before)
+        result_key = (pdf_name, chunk_id)
+        if result_key not in seen:
+            seen.add(result_key)
+            expanded.append(result)
+        expanded.extend(neighbors_after)
+    return expanded
 
 
 def _format_result(entry: dict, score: float | int | None = None) -> dict:
@@ -34,8 +95,16 @@ def _format_result(entry: dict, score: float | int | None = None) -> dict:
         "pdf_name": metadata.get("pdf_name", "unknown.pdf"),
         "page_number": metadata.get("page_number", 0),
         "chunk_id": metadata.get("chunk_id", entry.get("id", "")),
+        "section": metadata.get("section", "Unbekannt"),
+        "extraction_method": metadata.get("extraction_method", "pdf_text"),
         "score": score if score is not None else entry.get("distance"),
     }
+
+
+def _filter_by_sections(results: list[dict], selected_sections: set[str]) -> list[dict]:
+    if not selected_sections:
+        return results
+    return [result for result in results if result.get("section", "Unbekannt") in selected_sections]
 
 
 def _terms(text: str) -> set[str]:

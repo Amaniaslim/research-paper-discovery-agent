@@ -84,6 +84,29 @@ def recall_reviews(
     return _rank_entries(clean_query, _load_entries(persist_path), limit)
 
 
+def list_reviews(
+    limit: int = 15,
+    persist_path: Path = DEFAULT_MEMORY_PATH,
+) -> list[MemoryDocument]:
+    """Return the most recent stored research runs (newest first), like a history."""
+    collection = _get_chroma_collection()
+    if collection is not None:
+        result = collection.get(include=["documents", "metadatas"])
+        entries = [
+            {"page_content": document, "metadata": metadata}
+            for document, metadata in zip(result.get("documents", []), result.get("metadatas", []))
+        ]
+    else:
+        entries = _load_entries(persist_path) if persist_path.exists() else []
+
+    documents = [
+        MemoryDocument(page_content=entry["page_content"], metadata=entry["metadata"])
+        for entry in entries
+    ]
+    documents.sort(key=lambda doc: str(doc.metadata.get("saved_at", "")), reverse=True)
+    return documents[:limit]
+
+
 def memory_backend() -> str:
     """Return the active memory backend for the Streamlit demo."""
     if _get_chroma_collection() is not None:

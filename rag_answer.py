@@ -43,7 +43,8 @@ def _call_saia(question: str, chunks: list[dict]) -> str:
     model = os.getenv("SAIA_MODEL", "mistral-large-3-675b-instruct-2512").strip()
     sources = "\n\n".join(
         (
-            f"Source {index}: [{chunk['pdf_name']}, page {chunk['page_number']}, chunk {chunk['chunk_id']}]\n"
+            f"Source {index}: [{chunk['pdf_name']}, page {chunk['page_number']}, "
+            f"chunk {chunk['chunk_id']}, section {chunk.get('section', 'Unbekannt')}]\n"
             f"{chunk['text']}"
         )
         for index, chunk in enumerate(chunks, start=1)
@@ -53,7 +54,8 @@ def _call_saia(question: str, chunks: list[dict]) -> str:
         "the top retrieved chunks are available. Start with: 'Auf Basis der gefundenen "
         "PDF-Quellen werden folgende Punkte genannt:' If the sources do not support a point, "
         "do not infer it. Connect every substantive statement to a source reference in this "
-        "format: [PDF name, page X]. Do not write that the documents contain no further "
+        "format: [PDF name, page X, chunk Y]. For essence or summary questions, synthesize "
+        "across all provided chunks instead of listing isolated sentences. Do not write that the documents contain no further "
         "specific risks. If the question is about RAG, retrieval, vector databases, database "
         "execution, or embeddings, mention source-supported RAG controls first, especially "
         "access controls for vector databases, post-retrieval filtering, content verification "
@@ -95,9 +97,9 @@ def _call_saia(question: str, chunks: list[dict]) -> str:
 
 def _fallback_answer(question: str, chunks: list[dict]) -> str:
     lines = [
-        "Auf Basis der gefundenen PDF-Quellen werden folgende Punkte genannt:",
+        "Auf Basis der gefundenen PDF-Quellen wurden diese relevanten Punkte extrahiert:",
         "",
-        f"Frage: {question}",
+        f"**Frage:** {question}",
         "",
     ]
     ordered_chunks = _prioritize_answer_chunks(question, chunks)
@@ -105,16 +107,17 @@ def _fallback_answer(question: str, chunks: list[dict]) -> str:
         lines.extend(_rag_control_lines(ordered_chunks))
     for index, chunk in enumerate(ordered_chunks, start=1):
         text = chunk["text"]
-        preview = _short_preview(text, limit=520)
+        preview = _clean_fallback_preview(text, limit=520)
         lines.extend(
             [
-                f"{index}. {preview} [{chunk['pdf_name']}, page {chunk['page_number']}]",
+                f"- **Quelle {index}:** {preview} [{chunk['pdf_name']}, page {chunk['page_number']}, chunk {chunk['chunk_id']}]",
                 "",
             ]
         )
     lines.append(
         "Hinweis: Die Antwort basiert auf den gefundenen Top-Quellen und ist keine vollständige Analyse des gesamten Dokuments."
     )
+    lines[-1] = "Hinweis: Die Antwort basiert auf den Top-Quellen und ist keine vollstaendige Analyse des gesamten Dokuments."
     return "\n".join(lines).strip()
 
 
@@ -123,6 +126,25 @@ def _short_preview(text: str, limit: int) -> str:
     if len(clean_text) <= limit:
         return clean_text
     return clean_text[:limit].rsplit(" ", 1)[0] + "..."
+
+
+def _clean_fallback_preview(text: str, limit: int) -> str:
+    preview = _start_at_sentence_boundary(" ".join(str(text or "").split()))
+    preview = preview.replace("References:", "").strip()
+    return _short_preview(preview, limit=limit)
+
+
+def _start_at_sentence_boundary(text: str) -> str:
+    clean_text = str(text or "").lstrip(" .,:;)-]")
+    if len(clean_text) < 40:
+        return clean_text
+    for marker in (". ", "? ", "! "):
+        position = clean_text.find(marker)
+        if 0 <= position <= 180 and position + len(marker) < len(clean_text):
+            candidate = clean_text[position + len(marker):].lstrip()
+            if candidate:
+                return candidate
+    return clean_text
 
 
 def _prioritize_answer_chunks(question: str, chunks: list[dict]) -> list[dict]:

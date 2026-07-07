@@ -254,11 +254,11 @@ def retrieve_papers(
 
     existing_message = LAST_RETRIEVAL_STATUS.get("message", "")
     if existing_message:
-        message = f"{existing_message} Kein Cache vorhanden; Sprint-1-Demodaten werden genutzt."
+        message = f"{existing_message} Kein Cache vorhanden; Demodaten werden genutzt."
     elif live:
-        message = "Kein Live-Ergebnis und kein Cache vorhanden; Sprint-1-Demodaten werden genutzt."
+        message = "Kein Live-Ergebnis und kein Cache vorhanden; Demodaten werden genutzt."
     else:
-        message = "Live-arXiv ist ausgeschaltet und kein Cache vorhanden; Sprint-1-Demodaten werden genutzt."
+        message = "Live-arXiv ist ausgeschaltet und kein Cache vorhanden; Demodaten werden genutzt."
     LAST_RETRIEVAL_STATUS.update({"mode": "fallback", "message": message})
     return core.load_demo_papers()
 
@@ -640,7 +640,7 @@ def select_ranked_papers(query: str, papers: list[core.Paper], limit: int) -> li
         seen_ids = {paper.id for paper in ranked}
         for paper in fallback_ranked:
             if paper.id not in seen_ids:
-                paper.source = "Sprint-1 fallback"
+                paper.source = "Demo fallback"
                 ranked.append(paper)
                 seen_ids.add(paper.id)
             if len(ranked) >= limit:
@@ -659,7 +659,7 @@ def export_review(review: core.LiteratureReview, output_path: Path = DEFAULT_OUT
 def to_markdown(review: core.LiteratureReview) -> str:
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     lines = [
-        f"# Sprint 2 Literature Review: {review.query}",
+        f"# Literature Review: {review.query}",
         "",
         f"- Forschungsfrage: {review.query}",
         f"- Exportdatum: {generated_at}",

@@ -1,0 +1,32 @@
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Python caches
+__pycache__/
+*.pyc
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets and local env (pass via docker env / compose instead)
+.env
+
+# Git and editor metadata
+.git/
+.gitignore
+.vscode/
+.idea/
+.DS_Store
+
+# Local runtime data (mounted as volumes at runtime)
+demo_output/
+data/pdfs/*.pdf
+chroma_db/
+exports/
+memory/
+
+# Logs
+*.log

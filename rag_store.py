@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
+import re
 from pathlib import Path
 
 
@@ -27,7 +29,7 @@ def store_chunks(
             ids=ids,
             documents=[chunk["text"] for chunk in chunks],
             metadatas=[_metadata(chunk) for chunk in chunks],
-            embeddings=[local_embedding(chunk["text"]) for chunk in chunks],
+            embeddings=[embed_text(chunk["text"]) for chunk in chunks],
         )
         return {"backend": "chromadb", "stored_chunks": len(chunks), "message": "Chunks stored in ChromaDB."}
 
@@ -75,11 +77,16 @@ def query_chunks(
     if collection is None:
         return []
 
-    result = collection.query(
-        query_embeddings=[local_embedding(question)],
-        n_results=top_k,
-        include=["documents", "metadatas", "distances"],
-    )
+    try:
+        result = collection.query(
+            query_embeddings=[embed_text(question)],
+            n_results=top_k,
+            include=["documents", "metadatas", "distances"],
+        )
+    except Exception:
+        # e.g. embedding dimension mismatch after switching EMBEDDING_MODEL.
+        # Let the retriever fall back to keyword search instead of crashing.
+        return []
     documents = result.get("documents", [[]])[0]
     metadatas = result.get("metadatas", [[]])[0]
     distances = result.get("distances", [[]])[0]
@@ -105,13 +112,42 @@ def stable_chunk_id(chunk: dict) -> str:
     return f"pdfchunk-{digest}"
 
 
+def embed_text(text: str) -> list[float]:
+    """Embed text through the configured embedding model (safe fallback to local).
+
+    Kept as a thin indirection so store and query always use the same vectors.
+    """
+    import embedding_config
+
+    return embedding_config.embed_text(text)
+
+
 def local_embedding(text: str, dimensions: int = 64) -> list[float]:
-    digest = hashlib.sha256(text.encode("utf-8")).digest()
-    values = []
-    for index in range(dimensions):
-        byte = digest[index % len(digest)]
-        values.append(round((byte / 127.5) - 1.0, 6))
-    return values
+    """Create a deterministic lexical embedding for offline retrieval demos."""
+    vector = [0.0] * dimensions
+    terms = _embedding_terms(text)
+    if not terms:
+        return vector
+
+    for term in terms:
+        digest = hashlib.sha1(term.encode("utf-8")).digest()
+        index = int.from_bytes(digest[:4], "big") % dimensions
+        sign = 1.0 if digest[4] % 2 == 0 else -1.0
+        weight = 1.8 if " " in term else 1.0
+        vector[index] += sign * weight
+
+    norm = math.sqrt(sum(value * value for value in vector)) or 1.0
+    return [round(value / norm, 6) for value in vector]
+
+
+def _embedding_terms(text: str) -> list[str]:
+    words = [
+        word
+        for word in re.findall(r"[a-zA-Z][a-zA-Z-]{2,}", text.lower())
+        if word not in _EMBEDDING_STOPWORDS
+    ]
+    bigrams = [f"{left} {right}" for left, right in zip(words, words[1:])]
+    return words + bigrams
 
 
 def _get_collection(persist_path: Path):
@@ -133,6 +169,8 @@ def _metadata(chunk: dict) -> dict:
         "pdf_name": chunk["pdf_name"],
         "page_number": int(chunk["page_number"]),
         "chunk_id": chunk["chunk_id"],
+        "section": chunk.get("section", "Unbekannt"),
+        "extraction_method": chunk.get("extraction_method", "pdf_text"),
     }
 
 
@@ -140,3 +178,28 @@ def _load_cache(cache_path: Path) -> list[dict]:
     if not cache_path.exists():
         return []
     return json.loads(cache_path.read_text(encoding="utf-8"))
+
+
+_EMBEDDING_STOPWORDS = {
+    "the",
+    "and",
+    "for",
+    "with",
+    "that",
+    "this",
+    "from",
+    "are",
+    "was",
+    "were",
+    "into",
+    "their",
+    "there",
+    "have",
+    "has",
+    "paper",
+    "study",
+    "using",
+    "used",
+    "also",
+    "can",
+}

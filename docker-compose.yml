@@ -1,0 +1,28 @@
+services:
+  research-agent:
+    build: .
+    image: research-paper-discovery-agent
+    container_name: research-paper-discovery-agent
+    ports:
+      - "8501:8501"
+    environment:
+      # Optional LLM answer generation (SAIA / academiccloud). Leave empty to use
+      # the local fallback answer built from retrieved chunks.
+      - SAIA_API_KEY=${SAIA_API_KEY:-}
+      - SAIA_BASE_URL=${SAIA_BASE_URL:-https://chat-ai.academiccloud.de/v1}
+      - SAIA_MODEL=${SAIA_MODEL:-mistral-large-3-675b-instruct-2512}
+      - ENABLE_LLM_SUMMARIES=${ENABLE_LLM_SUMMARIES:-true}
+      # Embeddings: leave unset/local for the offline default, or set a
+      # sentence-transformers model name (requires the package to be installed).
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-local}
+      # OCR: disabled | tesseract | unlimited_ocr
+      - OCR_MODE=${OCR_MODE:-disabled}
+      - UNLIMITED_OCR_PATH=${UNLIMITED_OCR_PATH:-}
+      - UNLIMITED_OCR_BASE_URL=${UNLIMITED_OCR_BASE_URL:-}
+      - UNLIMITED_OCR_MODEL=${UNLIMITED_OCR_MODEL:-Unlimited-OCR}
+      - UNLIMITED_OCR_API_KEY=${UNLIMITED_OCR_API_KEY:-}
+    volumes:
+      # Persist uploaded PDFs, exports and the ChromaDB / memory stores.
+      - ./data/pdfs:/app/data/pdfs
+      - ./demo_output:/app/demo_output
+    restart: unless-stopped

@@ -29,6 +29,8 @@ def chunk_pages(
                         "pdf_name": page["pdf_name"],
                         "page_number": page["page_number"],
                         "chunk_id": f"p{page['page_number']}-c{chunk_index}",
+                        "section": page.get("section", "Unbekannt"),
+                        "extraction_method": page.get("extraction_method", "pdf_text"),
                         "text": chunk_text,
                     }
                 )

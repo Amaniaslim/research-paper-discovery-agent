@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import rag_answer
 import rag_retriever
+import rag_store
 
 
 def test_rag_question_prioritizes_vector_database_controls(monkeypatch) -> None:
@@ -28,6 +29,46 @@ def test_rag_question_prioritizes_vector_database_controls(monkeypatch) -> None:
     assert results[0]["chunk_id"] == "p4-c1"
 
 
+def test_retrieval_can_filter_by_section(monkeypatch) -> None:
+    entries = [
+        {
+            "id": "abstract",
+            "document": "The paper introduces an agentic AI security framework.",
+            "metadata": {
+                "pdf_name": "paper.pdf",
+                "page_number": 1,
+                "chunk_id": "p1-c1",
+                "section": "Abstract",
+            },
+        },
+        {
+            "id": "limitations",
+            "document": "The limitations include deployment risk and incomplete evaluation.",
+            "metadata": {
+                "pdf_name": "paper.pdf",
+                "page_number": 9,
+                "chunk_id": "p9-c1",
+                "section": "Limitations",
+            },
+        },
+    ]
+    monkeypatch.setattr(rag_retriever.rag_store, "query_chunks", lambda question, top_k=5: [])
+    monkeypatch.setattr(rag_retriever.rag_store, "load_all_chunks", lambda: entries)
+
+    results = rag_retriever.search_relevant_chunks("What limitations are discussed?", top_k=3, sections=["Limitations"])
+
+    assert [result["chunk_id"] for result in results] == ["p9-c1"]
+    assert results[0]["section"] == "Limitations"
+
+
+def test_local_embedding_rewards_term_overlap() -> None:
+    question = rag_store.local_embedding("vector database access controls for RAG retrieval")
+    relevant = rag_store.local_embedding("RAG systems need access controls for vector databases")
+    unrelated = rag_store.local_embedding("qualitative interviews about classroom collaboration")
+
+    assert _dot(question, relevant) > _dot(question, unrelated)
+
+
 def test_rag_fallback_answer_names_specific_controls(monkeypatch) -> None:
     monkeypatch.setenv("SAIA_API_KEY", "")
     chunks = [
@@ -48,3 +89,7 @@ def test_rag_fallback_answer_names_specific_controls(monkeypatch) -> None:
     assert "Post-Retrieval Filtering" in result["answer"]
     assert "Content Verification vor Embedding" in result["answer"]
     assert "Rate-Limiting" in result["answer"]
+
+
+def _dot(left: list[float], right: list[float]) -> float:
+    return sum(left_value * right_value for left_value, right_value in zip(left, right))

@@ -13,7 +13,7 @@ def test_markdown_export(tmp_path) -> None:
 
     markdown = pipeline.export_review(review, tmp_path / "review.md")
 
-    assert "Sprint 2 Literature Review" in markdown
+    assert "Literature Review" in markdown
     assert "security risks of agentic AI systems" in markdown
     assert (tmp_path / "review.md").exists()
 
@@ -33,5 +33,5 @@ def test_answer_fallback_without_api_key(monkeypatch) -> None:
 
     assert result["mode"] == "fallback"
     assert "Auf Basis der gefundenen PDF-Quellen" in result["answer"]
-    assert "[paper.pdf, page 2]" in result["answer"]
-    assert "keine vollständige Analyse des gesamten Dokuments" in result["answer"]
+    assert "[paper.pdf, page 2, chunk p2-c1]" in result["answer"]
+    assert "keine vollstaendige Analyse des gesamten Dokuments" in result["answer"]

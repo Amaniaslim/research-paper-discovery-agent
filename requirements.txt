@@ -2,4 +2,12 @@ streamlit==1.58.0
 chromadb==1.5.9
 python-dotenv==1.2.2
 pymupdf==1.26.6
+pillow==12.0.0
+pytesseract==0.3.13
+openpyxl==3.1.5
 pytest==9.0.2
+
+# Optional: better semantic embeddings. Install to enable EMBEDDING_MODEL with a
+# sentence-transformers model. Left commented so the base image stays lightweight
+# and the app keeps working with the offline local embedding by default.
+# sentence-transformers==3.3.1

@@ -21,6 +21,7 @@ Sprint 3 adds:
 
 - `pymupdf` for PDF text extraction
 - `chromadb` for persistent chunk storage
+- optional `pytesseract` and `Pillow` for OCR on scanned pages
 - `python-dotenv` for `.env` API configuration
 - `streamlit` for the UI
 - `pytest` for lightweight project tests
@@ -63,7 +64,26 @@ page keeps structured metadata:
 
 - `pdf_name`
 - `page_number`
+- `section`
+- `extraction_method`
 - `text`
+
+If OCR is enabled in the UI, pages with little or no selectable text are rendered
+and passed to the selected OCR backend. The lightweight backend is local
+Tesseract. The advanced backend follows the professor feedback and can call a
+separately started Baidu Unlimited-OCR server through an OpenAI-compatible
+endpoint.
+
+Optional Unlimited-OCR configuration in `.env`:
+
+```env
+UNLIMITED_OCR_BASE_URL=http://127.0.0.1:10000
+UNLIMITED_OCR_MODEL=Unlimited-OCR
+UNLIMITED_OCR_API_KEY=
+```
+
+Unlimited-OCR is not started by this app because it is a large GPU-oriented
+model. The app only provides the integration point.
 
 ## Chunking
 
@@ -74,6 +94,8 @@ keeps:
 - `pdf_name`
 - `page_number`
 - `chunk_id`
+- `section`
+- `extraction_method`
 - `text`
 
 ## ChromaDB Chunk Store
@@ -93,7 +115,7 @@ demo_output/pdf_chroma/
 Each chunk is stored with:
 
 - document text
-- metadata: `pdf_name`, `page_number`, `chunk_id`
+- metadata: `pdf_name`, `page_number`, `chunk_id`, `section`, `extraction_method`
 - stable ID based on `pdf_name + page_number + chunk_id`
 
 If ChromaDB is unavailable, the app stores chunks in:
@@ -104,12 +126,16 @@ demo_output/pdf_chunks_cache.json
 
 ## Retrieval
 
-`rag_retriever.py` retrieves the top 3 to 5 relevant chunks for a user question.
+`rag_retriever.py` retrieves the most relevant chunks for a user question.
+Retrieval now combines ChromaDB with a deterministic lexical embedding, keyword
+reranking, RAG-specific phrase boosts, and optional section filters from the UI.
 The UI shows source information for each retrieved chunk:
 
 - PDF name
 - page number
 - chunk ID
+- section
+- extraction method
 
 ## SAIA LLM Answer Generation
 
@@ -157,9 +183,10 @@ The Streamlit demo uses four main tabs:
 The `PDF-RAG Demo` tab contains the PDF workflow in one guided flow:
 
 1. Upload the full-text PDF of a relevant paper.
-2. Index the PDF into page-aware chunks.
-3. Ask a question against the indexed PDF text.
-4. Review answer sources.
+2. Index the PDF into page-aware and section-aware chunks.
+3. Ask either a detail question or the preset question about the paper's core claims.
+4. Review answer sources with PDF name, page, chunk ID, section, and extraction method.
+5. Export the result as Markdown.
 
 This keeps the Sprint 1 and Sprint 2 functionality visible while Sprint 3 adds
 PDF-RAG on top of it.
@@ -177,15 +204,29 @@ The Sprint 3 Markdown export contains:
 - question
 - answer
 - answer mode
-- retrieved sources with PDF name and page number
+- selected sections
+- retrieved sources with PDF name, page number, chunk ID, section, extraction method, and score where available
 
-BibTeX, APA, and richer structured exports are future work.
+BibTeX and APA polish are future work.
+
+## Sprint Review Feedback Addressed
+
+- Full-PDF workflow is visible from upload to export.
+- Source traceability keeps PDF name, page number, chunk ID, section, and extraction method.
+- OCR support is available as an optional fallback for scanned pages, including
+  a lightweight Tesseract path and an advanced Baidu Unlimited-OCR server path.
+- Retrieval quality is improved with lexical embeddings, reranking, and section filters.
+- The demo includes a core-claims question preset to show paper-level synthesis, not only sentence-level lookup.
+
+## Target Audience
+
+The strongest fit is for students, researchers, and analysts who need quick,
+source-grounded orientation in long research papers before reading them deeply.
 
 ## Current Limitations
 
-- PDF extraction depends on selectable text; scanned PDFs without OCR may return
-  little or no text.
-- Chunk embeddings use a simple local deterministic embedding for stability.
-- The app does not yet use a dedicated embedding API.
+- OCR requires optional Python packages and either a local Tesseract binary or a
+  separately deployed Unlimited-OCR service.
+- Local embeddings are improved but still less powerful than a dedicated embedding API.
 - The app does not yet parse citations or bibliography sections separately.
 - Source grounding depends on retrieved chunks, not full-document reasoning.
