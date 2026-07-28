@@ -12,13 +12,14 @@ fallbacks, PDF extraction and optional OCR, retrieval-augmented generation
 
 - **Code repository:** [github.com/Amaniaslim/research-paper-discovery-agent](https://github.com/Amaniaslim/research-paper-discovery-agent)
 - **Live portfolio:** [amaniaslim.github.io/research-paper-discovery-agent](https://amaniaslim.github.io/research-paper-discovery-agent/)
+- **Container package:** [GHCR package](https://github.com/users/Amaniaslim/packages/container/package/research-paper-discovery-agent)
 - **Demo Day presentation:** [Research Paper Discovery Agent (PDF)](docs/assets/Research_Paper_Discovery_Agent_Demo_Day.pdf)
 - **Full Git history:** [commits on `main`](https://github.com/Amaniaslim/research-paper-discovery-agent/commits/main/)
 - **License:** [MIT](LICENSE)
 
-The GitHub Pages portfolio is published from `docs/`. The configured container
-image name is `ghcr.io/amaniaslim/research-paper-discovery-agent:latest`; this
-README does not claim that the image has already been published.
+The GitHub Pages portfolio is published from `docs/`. The container image is
+published to GHCR as `ghcr.io/amaniaslim/research-paper-discovery-agent` with
+the tags `latest` and `sha-1723fef`. The package is currently private.
 
 ## Features
 
@@ -161,6 +162,26 @@ Compose automatically reads an existing `.env` file. It mounts
 `data/pdfs/` and `demo_output/` so uploaded PDFs, local indexes, memory, and
 exports survive container recreation. These runtime files are ignored by Git.
 
+### Published GHCR image
+
+While the package is private, authenticate with a GitHub account that has
+package access:
+
+```bash
+gh auth token | docker login ghcr.io --username Amaniaslim --password-stdin
+docker pull ghcr.io/amaniaslim/research-paper-discovery-agent:latest
+docker run --rm -p 8501:8501 ghcr.io/amaniaslim/research-paper-discovery-agent:latest
+```
+
+For a reproducible deployment, use the immutable commit tag:
+
+```bash
+docker pull ghcr.io/amaniaslim/research-paper-discovery-agent:sha-1723fef
+```
+
+If the package owner changes its visibility to public in GitHub Package
+Settings, the login command is no longer required.
+
 ### Plain Docker
 
 ```bash
@@ -273,13 +294,14 @@ research-paper-discovery-agent/
 ## Change History
 
 This table covers the complete repository history up to and including the
-current cleanup. Detailed Sprint documentation is available in
+current container publication. Detailed Sprint documentation is available in
 [`docs/sprints/`](docs/sprints/), and every original diff remains available in
 the linked Git history.
 
 | Date | Revision | Change |
 |---|---|---|
-| 2026-07-29 | Current repository cleanup | Made `app.py` the single entrypoint, normalized Compose and script names, reorganized historical documentation, removed obsolete placeholders, and expanded setup/deployment documentation. |
+| 2026-07-29 | Current GHCR publication | Published the validated `linux/amd64` image as `latest` and `sha-1723fef`, linked it to the repository, and documented authenticated pulls. |
+| 2026-07-29 | [`1723fef`](https://github.com/Amaniaslim/research-paper-discovery-agent/commit/1723fef) | Made `app.py` the single entrypoint, normalized Compose and script names, reorganized historical documentation, removed obsolete placeholders, and expanded setup/deployment documentation. |
 | 2026-07-29 | [`4e79cb3`](https://github.com/Amaniaslim/research-paper-discovery-agent/commit/4e79cb3) | Added the live portfolio URL and GitHub Pages metadata. |
 | 2026-07-29 | [`9937497`](https://github.com/Amaniaslim/research-paper-discovery-agent/commit/9937497) | Added and linked the Demo Day presentation. |
 | 2026-07-29 | [`78516e7`](https://github.com/Amaniaslim/research-paper-discovery-agent/commit/78516e7) | Prepared the final university delivery, documentation, tests, Docker deployment, website, and sanitized archive. |
