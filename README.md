@@ -13,6 +13,7 @@ evaluating, and citing the original publications.
 - Repository: [Amaniaslim/research-paper-discovery-agent](https://github.com/Amaniaslim/research-paper-discovery-agent)
 - Final application entrypoint: `app_sprint3.py`
 - Portfolio website source: [`docs/index.html`](docs/index.html)
+- Demo Day presentation: [Research Paper Discovery Agent (PDF)](docs/assets/Research_Paper_Discovery_Agent_Demo_Day.pdf)
 - Container image target: `ghcr.io/amaniaslim/research-paper-discovery-agent:latest`
 
 GitHub Pages has to be enabled for the `docs/` folder before the portfolio
