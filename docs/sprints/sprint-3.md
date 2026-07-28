@@ -1,4 +1,4 @@
-# Sprint 3 Description
+# Sprint 3
 
 Sprint 3 adds a PDF-RAG prototype on top of the Sprint 2 discovery workflow.
 

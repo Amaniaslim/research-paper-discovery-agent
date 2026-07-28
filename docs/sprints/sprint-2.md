@@ -1,4 +1,4 @@
-# Sprint 2 Description
+# Sprint 2
 
 Sprint 2 extended the offline MVP into a live search and retrieve workflow.
 

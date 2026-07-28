@@ -1,7 +1,7 @@
 # Architecture
 
 The Research Paper Discovery Agent combines two workflows in one Streamlit
-entrypoint, `app_sprint3.py`: live literature discovery and source-grounded
+entrypoint, `app.py`: live literature discovery and source-grounded
 question answering over uploaded PDFs.
 
 ## Paper Discovery
@@ -17,7 +17,7 @@ question answering over uploaded PDFs.
 ## PDF Knowledge Base
 
 1. `pdf_loader.py` saves PDFs and extracts selected pages with PyMuPDF.
-2. `src/ocr_service.py` optionally processes scanned pages with Tesseract or
+2. `ocr_service.py` optionally processes scanned pages with Tesseract or
    Unlimited-OCR.
 3. `chunking.py` creates overlapping chunks with page and section metadata.
 4. `embedding_config.py` chooses the local embedding or an optional

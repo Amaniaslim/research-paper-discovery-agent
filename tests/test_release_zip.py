@@ -15,10 +15,14 @@ def test_release_zip_is_allowlisted(monkeypatch, tmp_path) -> None:
     assert result == archive_path
     with ZipFile(result) as archive:
         names = set(archive.namelist())
-    assert "app_sprint3.py" in names
+    assert "app.py" in names
+    assert "compose.yaml" in names
+    assert "scripts/smoke_check.py" in names
     assert "README.md" in names
     assert "docs/index.html" in names
     assert "scripts/create_final_zip.py" in names
+    assert "app_sprint3.py" not in names
+    assert "docker-compose.yml" not in names
     assert ".env" not in names
     assert not any(name.startswith(".git/") for name in names)
     assert not any(name.startswith("demo_output/") for name in names)

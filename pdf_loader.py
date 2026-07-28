@@ -9,7 +9,7 @@ _PROJECT_DIR = Path(__file__).resolve().parent
 if str(_PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(_PROJECT_DIR))
 
-from src import ocr_service  # noqa: E402
+import ocr_service  # noqa: E402
 
 
 def pdf_page_count(pdf_path: Path) -> int:

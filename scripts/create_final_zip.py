@@ -22,12 +22,12 @@ ROOT_FILES = {
     "Dockerfile",
     "LICENSE",
     "README.md",
-    "docker-compose.yml",
+    "compose.yaml",
     "pyproject.toml",
     "requirements-dev.txt",
     "requirements.txt",
 }
-INCLUDED_DIRECTORIES = ("src", "tests", "docs", "scripts")
+INCLUDED_DIRECTORIES = ("tests", "docs", "scripts")
 EXCLUDED_DIRECTORY_NAMES = {
     ".agents",
     ".git",

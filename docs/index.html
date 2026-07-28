@@ -268,7 +268,7 @@
       <div class="test-terminal" aria-label="Validation commands">
         <div class="terminal-title"><span></span><span></span><span></span><b>quality-gates.ps1</b></div>
         <pre><code><i>$</i> python -m pytest
-<i>$</i> python demo_smoke_check.py
+<i>$</i> python scripts/smoke_check.py
 <i>$</i> python -m compileall .
 <i>$</i> python -m ruff check .
 <i>$</i> docker compose config --quiet</code></pre>
@@ -294,10 +294,10 @@
       <div class="try-card">
         <p class="eyebrow"><span></span> Start with local, key-free defaults</p>
         <h2>Turn a research question<br>into an evidence trail.</h2>
-        <div class="command"><code>python -m streamlit run app_sprint3.py</code><span>localhost:8501</span></div>
+        <div class="command"><code>python -m streamlit run app.py</code><span>localhost:8501</span></div>
         <div class="hero-actions">
           <a class="button button-primary" href="https://github.com/Amaniaslim/research-paper-discovery-agent">Clone from GitHub <span aria-hidden="true">↗</span></a>
-          <a class="button button-secondary dark-button" href="https://github.com/Amaniaslim/research-paper-discovery-agent#local-setup">Read setup guide</a>
+          <a class="button button-secondary dark-button" href="https://github.com/Amaniaslim/research-paper-discovery-agent#setup-instructions">Read setup guide</a>
         </div>
       </div>
     </section>

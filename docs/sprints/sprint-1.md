@@ -1,4 +1,4 @@
-# Sprint 1 Description
+# Sprint 1
 
 Sprint 1 established the first offline MVP of the Research Paper Discovery Agent.
 
