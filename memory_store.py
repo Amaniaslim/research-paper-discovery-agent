@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import json
 import hashlib
+import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -9,10 +9,9 @@ from uuid import uuid4
 
 from review_core import LiteratureReview
 
-
-SPRINT_DIR = Path(__file__).resolve().parent
-DEFAULT_MEMORY_PATH = SPRINT_DIR / "demo_output" / "memory.json"
-DEFAULT_CHROMA_PATH = SPRINT_DIR / "demo_output" / "chroma_memory"
+PROJECT_DIR = Path(__file__).resolve().parent
+DEFAULT_MEMORY_PATH = PROJECT_DIR / "demo_output" / "memory.json"
+DEFAULT_CHROMA_PATH = PROJECT_DIR / "demo_output" / "chroma_memory"
 DEFAULT_COLLECTION_NAME = "research_runs"
 
 

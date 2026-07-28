@@ -91,5 +91,37 @@ def test_rag_fallback_answer_names_specific_controls(monkeypatch) -> None:
     assert "Rate-Limiting" in result["answer"]
 
 
+def test_retrieval_adds_neighboring_chunks(monkeypatch) -> None:
+    entries = [
+        {
+            "id": f"chunk-{number}",
+            "document": f"Context number {number} about retrieval controls.",
+            "metadata": {
+                "pdf_name": "paper.pdf",
+                "page_number": 4,
+                "chunk_id": f"p4-c{number}",
+                "section": "Methods",
+            },
+        }
+        for number in range(1, 4)
+    ]
+    monkeypatch.setattr(
+        rag_retriever.rag_store,
+        "query_chunks",
+        lambda question, top_k=5: [entries[1]],
+    )
+    monkeypatch.setattr(rag_retriever.rag_store, "load_all_chunks", lambda: entries)
+
+    results = rag_retriever.search_relevant_chunks(
+        "Which retrieval controls are discussed?",
+        top_k=1,
+        neighbor_radius=1,
+    )
+
+    assert [result["chunk_id"] for result in results] == ["p4-c1", "p4-c2", "p4-c3"]
+    assert results[0]["is_context"] is True
+    assert results[2]["is_context"] is True
+
+
 def _dot(left: list[float], right: list[float]) -> float:
     return sum(left_value * right_value for left_value, right_value in zip(left, right))

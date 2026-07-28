@@ -5,7 +5,6 @@ pymupdf==1.26.6
 pillow==12.0.0
 pytesseract==0.3.13
 openpyxl==3.1.5
-pytest==9.0.2
 
 # Optional: better semantic embeddings. Install to enable EMBEDDING_MODEL with a
 # sentence-transformers model. Left commented so the base image stays lightweight

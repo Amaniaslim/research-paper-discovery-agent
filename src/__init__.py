@@ -1,1 +1,1 @@
-"""Support package for the Research Paper Discovery Agent (Sprint 3+)."""
+"""Support package for the Research Paper Discovery Agent."""

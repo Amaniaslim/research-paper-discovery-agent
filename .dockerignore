@@ -7,12 +7,24 @@ ENV/
 __pycache__/
 *.pyc
 *.py[cod]
+*.pyo
+*.egg-info/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
 
 # Secrets and local env (pass via docker env / compose instead)
 .env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+*.pem
+*.key
+credentials*.json
 
 # Git and editor metadata
 .git/
@@ -20,6 +32,8 @@ __pycache__/
 .vscode/
 .idea/
 .DS_Store
+Thumbs.db
+*.code-workspace
 
 # Local runtime data (mounted as volumes at runtime)
 demo_output/
@@ -27,6 +41,14 @@ data/pdfs/*.pdf
 chroma_db/
 exports/
 memory/
+release/
 
 # Logs
 *.log
+
+# Files not required by the application container
+docs/
+tests/
+scripts/
+README*.md
+requirements-dev.txt

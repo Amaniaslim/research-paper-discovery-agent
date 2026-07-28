@@ -1,264 +1,309 @@
 # Research Paper Discovery Agent
 
-Sprint-based educational prototype for scientific literature discovery around
-Agentic AI Security. The project helps users find papers, rank them, summarize
-abstracts, remember previous research runs, and ask source-grounded questions
-against uploaded PDF full texts.
+An AI-assisted scientific literature discovery system with live paper search,
+transparent ranking, PDF-RAG, optional OCR, source-grounded question answering,
+local research memory, and multi-format export.
 
-The agent supports the first research overview. It does not replace reading,
-evaluating, or citing scientific papers carefully.
+The application is designed for early literature exploration. It helps users
+find, compare, and inspect relevant research, but it does not replace reading,
+evaluating, and citing the original publications.
 
-## Features
+## Project Links
 
-- Streamlit demo UI for Sprint 2 and Sprint 3 workflows
-- Offline demo data for stable Sprint 1 fallback behavior
-- Live paper search via arXiv with Semantic Scholar fallback
-- Local cache and embedded demo-paper fallback for reliable demos
-- Metadata normalization and deduplication
-- Transparent rule-based ranking
-- Abstract-based heuristic summaries, with optional SAIA summaries
-- ChromaDB memory with JSON fallback
-- Markdown export for literature-review results
-- Sprint 3 PDF-RAG prototype:
-  - PDF upload
-  - page-wise text extraction with PyMuPDF and optional OCR fallback
-  - large-PDF handling: index the whole PDF or only a selected page range
-  - text chunking with page, section, and extraction metadata
-  - ChromaDB chunk storage with JSON fallback
-  - configurable Top-K retrieval (default 5) with optional neighboring-chunk
-    context expansion (0/1/2 adjacent chunks on the same page)
-  - pluggable embedding configuration with a safe offline fallback
-  - OCR adapter (`src/ocr_service.py`) with a scanned-PDF detector and support
-    for Baidu Unlimited-OCR (HTTP endpoint or local CLI)
-  - optional SAIA answer generation, with fallback answer from retrieved chunks
-  - source display with PDF name, page number, chunk ID, section, and extraction method
-  - Markdown export plus CSV and Excel export of retrieved sources
-  - scalability log (pages, chunks, indexing time, retrieval time)
-  - Docker / docker-compose support
+- Repository: [Amaniaslim/research-paper-discovery-agent](https://github.com/Amaniaslim/research-paper-discovery-agent)
+- Final application entrypoint: `app_sprint3.py`
+- Portfolio website source: [`docs/index.html`](docs/index.html)
+- Container image target: `ghcr.io/amaniaslim/research-paper-discovery-agent:latest`
 
-## Sprint Overview
+GitHub Pages has to be enabled for the `docs/` folder before the portfolio
+website is public. No Streamlit Community Cloud URL or published container image
+is claimed until the corresponding deployment exists.
 
-### Sprint 1
+## Main Features
 
-Offline MVP with saved paper data, research-question input, paper ranking,
-abstract summaries, ChromaDB memory, and Markdown export. The goal was a stable
-and reproducible demo without API or network risk.
+- Live arXiv search with Semantic Scholar as a secondary live source
+- Local cache and embedded offline fallback for resilient operation
+- Metadata normalization and title/URL-based deduplication
+- Transparent rule-based relevance ranking
+- Abstract summaries generated locally or optionally improved with SAIA
+- PDF upload and page-wise text extraction with PyMuPDF
+- Whole-document or selected page-range indexing for large PDFs
+- Optional Tesseract and Baidu Unlimited-OCR adapters
+- Overlapping chunks with PDF, page, section, and extraction metadata
+- ChromaDB storage with a JSON fallback
+- Configurable Top-K retrieval and neighboring-chunk context
+- Source-grounded answers with a no-key local fallback
+- Local research memory and reopenable session history
+- Markdown, CSV, and Excel exports
+- Docker and Streamlit Community Cloud deployment support
 
-### Sprint 2
+## How the Agent Works
 
-Live Search & Retrieve workflow. The agent queries arXiv, falls back to Semantic
-Scholar, then falls back to local cache or demo data. It normalizes fields,
-deduplicates papers, ranks them transparently, stores research runs in memory,
-and exports a Markdown review.
-
-### Sprint 3
-
-PDF-RAG prototype. The agent uploads PDFs, extracts page-wise text with optional
-OCR fallback, chunks the text, stores chunks in ChromaDB, retrieves relevant
-chunks for a question, and generates an answer with PDF name, page, chunk, and
-section references. LLM answer generation is optional and falls back to retrieved
-chunks if no API key is configured.
-
-## Installation
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```text
+Research question
+    |
+    +--> arXiv --> Semantic Scholar --> cache --> offline papers
+    |       |
+    |       +--> normalize --> deduplicate --> rank --> summarize
+    |
+    +--> selected PDFs --> extract/OCR --> chunk --> embed --> store
+                                                    |
+Question about PDFs --> Top-K retrieval + neighbors + section filter
+                                                    |
+                               SAIA answer or local source-based fallback
+                                                    |
+                                  sources + memory + MD/CSV/XLSX export
 ```
 
-## Run
+Every network-dependent capability has a local fallback. SAIA is optional, and
+normal text-PDF workflows do not require OCR.
 
-Sprint 2 app:
+## Paper Discovery Workflow
 
-```powershell
-.\.venv\Scripts\python.exe -m streamlit run .\app.py
-```
+1. Open **Paper Search** and enter a research question.
+2. Choose the number of results and whether live search is enabled.
+3. The agent queries arXiv, then Semantic Scholar when needed.
+4. Results are normalized, deduplicated, filtered, and ranked.
+5. Each ranked paper shows the signals that contributed to its score.
+6. Abstract summaries are created heuristically unless SAIA is configured.
+7. The run is saved to local memory and can be exported as Markdown.
 
-Sprint 3 PDF-RAG app:
-
-```powershell
-.\.venv\Scripts\python.exe -m streamlit run .\app_sprint3.py
-```
-
-If port `8501` is already used:
-
-```powershell
-.\.venv\Scripts\python.exe -m streamlit run .\app_sprint3.py --server.port 8502
-```
-
-Command-line Sprint 2 review:
-
-```powershell
-.\.venv\Scripts\python.exe .\paper_research_agent.py --offline
-```
-
-The app runs fully locally without Docker. Docker is an optional deployment path.
+If live services fail or return no useful papers, the agent uses a local cache
+and then a small embedded offline dataset. This is an intentional resilience
+feature, not an error state.
 
 ## PDF-RAG Workflow
 
-1. Upload one or more PDFs in the **PDF-RAG Demo** tab (saved to `data/pdfs/`).
-2. Configure the index: choose PDFs, page range, chunk size/overlap, and OCR.
-3. Build the index (chunks are stored in ChromaDB, JSON fallback otherwise).
-4. Ask a question. Choose Top-K and optional context expansion.
-5. Read the grounded answer and inspect the source cards (PDF, page, chunk,
-   section, excerpt).
-6. Export the result as Markdown, CSV, or Excel in the **Export & Memory** tab.
+1. Open **PDF Knowledge Base** and upload one or more PDFs.
+2. Select the files and choose the whole document or a page range.
+3. Configure chunking and optionally enable OCR for scanned pages.
+4. Build the index in ChromaDB or the JSON fallback.
+5. Ask a question, select Top-K, neighboring context, and optional sections.
+6. Inspect the answer and its source cards.
+7. Export the result and sources as Markdown, CSV, or Excel.
 
-## Large PDFs and Page Ranges
+Source cards include the PDF name, page number, chunk ID, detected section,
+extraction method, retrieval score, and original excerpt. Answers are limited to
+retrieved content and should always be checked against the cited pages.
 
-Before indexing you can choose to analyze the whole PDF or only a page range:
+## Architecture
 
-- **Analyze whole PDF** — extract, chunk, and index every page.
-- **Analyze only a page range** — e.g. start page `1`, end page `20`. Only the
-  selected pages are extracted, chunked, and indexed.
+- `app_sprint3.py` is the combined Streamlit product UI.
+- `paper_research_agent.py` handles live retrieval, fallbacks, normalization,
+  ranking, optional SAIA summaries, caching, and review export.
+- `review_core.py` provides paper/review data models, baseline ranking,
+  clustering, heuristic summaries, and offline papers.
+- `pdf_loader.py` extracts selected PDF pages and delegates optional OCR.
+- `chunking.py` creates overlapping chunks while retaining source metadata.
+- `embedding_config.py` selects a sentence-transformers model or the local
+  deterministic lexical embedding.
+- `rag_store.py` persists/query chunks with ChromaDB and JSON fallback.
+- `rag_retriever.py` performs Top-K retrieval, section filtering, and neighboring
+  context expansion.
+- `rag_answer.py` produces a SAIA answer when configured or a local answer from
+  retrieved chunks.
+- `memory_store.py` and `history_store.py` provide local memory and session
+  history.
+- `export_utils.py` creates source tables for CSV and Excel.
+- `src/ocr_service.py` isolates Tesseract and Unlimited-OCR integrations.
 
-PDFs with more than 100 pages show a performance warning and default to the
-page-range option. Index statistics show the number of PDFs, selected pages,
-chunks, storage backend, embedding model, OCR mode, and indexing time. A simple
-scalability log is appended to `demo_output/scalability_log.csv` (pages, chunks,
-indexing time, and retrieval time).
+More detail is available in [docs/architecture.md](docs/architecture.md).
 
-## OCR Support and Unlimited-OCR
+## Local Setup
 
-Scanned PDFs have no extractable text. The app detects this and shows a hint that
-OCR is required. OCR is optional and controlled by the `OCR_MODE` environment
-variable (`disabled`, `tesseract`, or `unlimited_ocr`).
+Python 3.12 is recommended.
 
-OCR handling lives in `src/ocr_service.py`, so backends are isolated from the
-rest of the app:
+### Windows PowerShell
 
-- **Tesseract (local)** — needs `pytesseract` plus a local Tesseract binary.
-- **Baidu Unlimited-OCR** — following the professor feedback
-  (https://github.com/baidu/Unlimited-OCR). Unlimited-OCR runs as a separate
-  server/CLI. Configure it via environment variables (no hardcoded paths):
-  - `UNLIMITED_OCR_BASE_URL` — an OpenAI-compatible endpoint (vLLM/SGLang), or
-  - `UNLIMITED_OCR_PATH` — a local CLI command, using `{image}` as the page-image
-    placeholder, e.g. `python /opt/Unlimited-OCR/run.py --image {image}`.
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m streamlit run app_sprint3.py
+```
 
-If OCR is enabled but the backend is not available, the app shows a helpful
-warning and keeps running. Normal text PDFs work without any OCR setup.
-
-## Run with Docker
-
-The app can run as a Docker container. It exposes port `8501` and stores data in
-mounted volumes so uploaded PDFs, exports, and the ChromaDB/memory stores persist
-across runs.
-
-Build and run with plain Docker:
+### macOS or Linux
 
 ```bash
-docker build -t research-paper-discovery-agent .
-docker run -p 8501:8501 research-paper-discovery-agent
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m streamlit run app_sprint3.py
 ```
 
-Or use docker-compose (recommended, wires up volumes and environment):
+Open `http://localhost:8501`. No API key is required for the offline paper
+fallback, local embeddings, or source-based PDF answers.
+
+## Docker Compose
+
+The Docker image uses Python 3.12 and starts `app_sprint3.py`.
 
 ```bash
-docker compose up --build
+docker compose config --quiet
+docker compose build
+docker compose up -d
 ```
 
-Then open http://localhost:8501.
+Open `http://localhost:8501` or check:
 
-To pass configuration, set the variables in your shell or a `.env` file that
-docker-compose reads automatically, for example:
-
-```env
-SAIA_API_KEY=your_api_key_here
-OCR_MODE=tesseract
-EMBEDDING_MODEL=local
-UNLIMITED_OCR_PATH=
+```bash
+curl http://localhost:8501/_stcore/health
 ```
 
-## Environment Variables
+Stop the application with:
 
-Copy `.env.example` to `.env` and add your own keys if needed.
-
-```env
-# LLM answer generation (optional)
-SAIA_API_KEY=your_api_key_here
-SAIA_BASE_URL=https://chat-ai.academiccloud.de/v1
-SAIA_MODEL=mistral-large-3-675b-instruct-2512
-ENABLE_LLM_SUMMARIES=true
-
-# Live paper search (optional)
-SEMANTIC_SCHOLAR_API_KEY=optional_key_here
-
-# Retrieval embeddings: "local" (offline default) or a sentence-transformers model
-EMBEDDING_MODEL=local
-
-# OCR: disabled | tesseract | unlimited_ocr
-OCR_MODE=disabled
-UNLIMITED_OCR_BASE_URL=
-UNLIMITED_OCR_PATH=
+```bash
+docker compose down
 ```
 
-No API key is required for the offline fallback demo. Do not commit `.env`.
+Compose persists `data/pdfs/` and `demo_output/`. Keep uploaded private PDFs and
+runtime stores out of Git.
+
+## Published Docker Image
+
+The configured publication target is:
+
+```text
+ghcr.io/amaniaslim/research-paper-discovery-agent:latest
+```
+
+`docker-compose.yml` tags local builds with that name. The package must be
+published to GitHub Container Registry before it can be pulled publicly; this
+repository does not claim that publication has already happened.
+
+## Configuration
+
+Copy `.env.example` to `.env` for local use. `.env` is ignored and must never be
+committed.
+
+| Variable | Purpose | Default |
+|---|---|---|
+| `SAIA_API_KEY` | Optional SAIA summaries and PDF answers | empty |
+| `SAIA_BASE_URL` | OpenAI-compatible SAIA endpoint | `https://chat-ai.academiccloud.de/v1` |
+| `SAIA_MODEL` | SAIA text model | `mistral-large-3-675b-instruct-2512` |
+| `ENABLE_LLM_SUMMARIES` | Enable SAIA summaries when a key exists | `true` |
+| `SEMANTIC_SCHOLAR_API_KEY` | Optional higher Semantic Scholar limits | empty |
+| `EMBEDDING_MODEL` | `local` or a sentence-transformers model | `local` |
+| `OCR_MODE` | `disabled`, `tesseract`, or `unlimited_ocr` | `disabled` |
+| `UNLIMITED_OCR_BASE_URL` | Optional Unlimited-OCR HTTP endpoint | empty |
+| `UNLIMITED_OCR_MODEL` | Unlimited-OCR model identifier | `Unlimited-OCR` |
+| `UNLIMITED_OCR_API_KEY` | Optional OCR endpoint credential | empty |
+| `UNLIMITED_OCR_PATH` | Optional local OCR command template | empty |
+
+When `EMBEDDING_MODEL` names a sentence-transformers model but the package or
+model is unavailable, the application falls back to the local embedding. Rebuild
+an existing PDF index after changing embedding models.
+
+## OCR Support
+
+OCR is only attempted for pages with little or no extractable text.
+
+- **Disabled:** scanned pages remain empty; text PDFs continue normally.
+- **Tesseract:** requires `pytesseract`, Pillow, and a local Tesseract binary.
+- **Unlimited-OCR:** uses either an OpenAI-compatible endpoint configured through
+  `UNLIMITED_OCR_BASE_URL` or a local command containing the `{image}`
+  placeholder in `UNLIMITED_OCR_PATH`.
+
+A missing or failing OCR backend is handled without crashing normal text-PDF
+workflows. See [docs/limitations.md](docs/limitations.md) for operational limits.
+
+## Memory and Exports
+
+Completed discovery runs are stored in ChromaDB when available and in JSON
+otherwise. Lightweight session snapshots allow previous searches and PDF
+questions to be reopened from the sidebar.
+
+The product exports:
+
+- a combined Markdown report with ranked papers, answer, and sources;
+- CSV source rows with question, answer, page, chunk, score, and configuration;
+- Excel source rows with the same fields.
+
+All generated files are local runtime data under `demo_output/` and are ignored
+by Git.
+
+## Tests
+
+Install development dependencies and run the complete checks:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python.exe -m pytest
+.\.venv\Scripts\python.exe demo_smoke_check.py
+.\.venv\Scripts\python.exe -m compileall .
+.\.venv\Scripts\python.exe -m ruff check .
+```
+
+The automated suite covers ranking, offline retrieval, PDF chunk metadata,
+section filtering, local embeddings, source-based answers, and Markdown export.
 
 ## Project Structure
 
 ```text
 research-paper-discovery-agent/
-|-- app.py                  # Sprint 2 app
-|-- app_sprint3.py          # Sprint 3 PDF-RAG app (main)
+|-- app_sprint3.py          # Final combined Streamlit application
+|-- app.py                  # Legacy paper-search-only entrypoint
 |-- paper_research_agent.py
 |-- review_core.py
-|-- memory_store.py
-|-- pdf_loader.py           # PDF extraction, page ranges, scanned detection
+|-- pdf_loader.py
 |-- chunking.py
-|-- rag_store.py            # ChromaDB storage + JSON fallback
-|-- rag_retriever.py        # Top-K retrieval + neighbor context expansion
+|-- embedding_config.py
+|-- rag_store.py
+|-- rag_retriever.py
 |-- rag_answer.py
-|-- embedding_config.py     # Pluggable embeddings with safe local fallback
-|-- export_utils.py         # CSV / Excel export of sources
+|-- memory_store.py
+|-- history_store.py
+|-- export_utils.py
 |-- src/
-|   `-- ocr_service.py      # OCR adapter (Tesseract / Unlimited-OCR)
-|-- data/
-|   `-- pdfs/
-|-- demo_output/            # exports, ChromaDB stores, scalability log
-|-- docs/
+|   `-- ocr_service.py
 |-- tests/
+|-- docs/                   # Portfolio website and technical documentation
+|-- scripts/
+|   `-- create_final_zip.py
+|-- data/
+|   `-- pdfs/               # Local uploads; PDFs are ignored
 |-- Dockerfile
-|-- .dockerignore
 |-- docker-compose.yml
 |-- requirements.txt
+|-- requirements-dev.txt
+|-- pyproject.toml
 |-- .env.example
-`-- .gitignore
+`-- LICENSE
 ```
 
-## Tests
+## Important Limitations
 
-```powershell
-.\.venv\Scripts\python.exe -m pytest
+- Ranking is transparent and rule-based rather than learned.
+- Heuristic summaries are derived from titles and abstracts.
+- The local embedding prioritizes resilience over state-of-the-art semantic
+  retrieval quality.
+- OCR quality and speed depend on an external backend and document quality.
+- Large PDFs require more time and storage; page-range indexing is recommended.
+- Source-grounded generation can still be incomplete because it only receives
+  retrieved chunks.
+- Results support exploration, not final academic or scientific judgment.
+
+## Streamlit Community Cloud
+
+Deployment settings:
+
+- Repository: `Amaniaslim/research-paper-discovery-agent`
+- Branch: `main`
+- Main file: `app_sprint3.py`
+- Recommended Python: `3.12`
+
+Optional secrets can be added in the Streamlit deployment settings:
+
+```toml
+SAIA_API_KEY = "..."
+SAIA_BASE_URL = "https://chat-ai.academiccloud.de/v1"
+SAIA_MODEL = "mistral-large-3-675b-instruct-2512"
+ENABLE_LLM_SUMMARIES = "true"
+SEMANTIC_SCHOLAR_API_KEY = "..."
+EMBEDDING_MODEL = "local"
+OCR_MODE = "disabled"
 ```
 
-Additional smoke check:
-
-```powershell
-.\.venv\Scripts\python.exe .\demo_smoke_check.py
-```
-
-## Known Limitations
-
-- OCR depends on an external setup: local Tesseract, or a separately started
-  Baidu Unlimited-OCR server/CLI configured via environment variables.
-- Very large PDFs may take longer to extract, chunk, and index. Use the page
-  range option to keep indexing fast.
-- Retrieval quality depends on the embedding model and chunking settings. The
-  default embedding is a deterministic offline lexical embedding for demo
-  stability; a sentence-transformers model can be enabled via `EMBEDDING_MODEL`.
-  Switching the embedding model requires rebuilding the index.
-- Generated answers must be checked by the user. The agent supports early
-  literature exploration, not final scientific judgment.
-- Ranking is transparent and rule-based, not ML-based.
-- LLM answer generation depends on API configuration; without a key the app uses
-  a fallback answer built from retrieved chunks.
-
-See [docs/limitations.md](docs/limitations.md) for more detail.
-
-## Next Steps
-
-- Dedicated semantic embedding API / stronger default embeddings
-- Stronger OCR setup and scanned-PDF evaluation with Unlimited-OCR
-- Better citation and bibliography extraction
-- Stronger evaluation tests for retrieval quality
-- Optional APA/BibTeX export polish
+Do not commit `.streamlit/secrets.toml`. Missing SAIA, Semantic Scholar, or OCR
+credentials do not prevent the base application from starting.

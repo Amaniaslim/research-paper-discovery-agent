@@ -5,9 +5,9 @@ import json
 import os
 import re
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
-import urllib.error
 import xml.etree.ElementTree as ET
 from dataclasses import asdict
 from datetime import datetime, timezone
@@ -21,12 +21,12 @@ except ImportError:
     load_dotenv = None
 
 
-SPRINT_DIR = Path(__file__).resolve().parent
+PROJECT_DIR = Path(__file__).resolve().parent
 if load_dotenv is not None:
-    load_dotenv(SPRINT_DIR / ".env")
+    load_dotenv(PROJECT_DIR / ".env")
 
-DEFAULT_OUTPUT_PATH = SPRINT_DIR / "demo_output" / "literature_review.md"
-DEFAULT_CACHE_PATH = SPRINT_DIR / "demo_output" / "paper_cache.json"
+DEFAULT_OUTPUT_PATH = PROJECT_DIR / "demo_output" / "literature_review.md"
+DEFAULT_CACHE_PATH = PROJECT_DIR / "demo_output" / "paper_cache.json"
 DEFAULT_QUERY = core.DEFAULT_QUERY
 ARXIV_API_URLS = [
     "https://export.arxiv.org/api/query",
@@ -127,7 +127,7 @@ def build_review(
     live: bool = True,
     cache_path: Path = DEFAULT_CACHE_PATH,
 ) -> core.LiteratureReview:
-    """Build Sprint 2 review with live arXiv retrieval and stable offline fallback."""
+    """Build a review with live retrieval and a stable offline fallback."""
     clean_query = query.strip()
     if not clean_query:
         raise ValueError("Please enter a research question.")
@@ -514,7 +514,7 @@ def _fetch_arxiv_query(search_query: str, limit: int) -> list[core.Paper]:
     for api_url in ARXIV_API_URLS:
         request = urllib.request.Request(
             f"{api_url}?{params}",
-            headers={"User-Agent": "Sprint2LiteratureAgent/1.0"},
+            headers={"User-Agent": "ResearchPaperDiscoveryAgent/1.0"},
         )
         try:
             with urllib.request.urlopen(request, timeout=12) as response:
@@ -787,7 +787,7 @@ def _display_year(year: int) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate the Sprint 2 live retrieval review.")
+    parser = argparse.ArgumentParser(description="Generate a live or offline literature review.")
     parser.add_argument("query", nargs="?", default=DEFAULT_QUERY)
     parser.add_argument("--limit", type=int, default=8)
     parser.add_argument("--offline", action="store_true")
@@ -797,7 +797,7 @@ def main() -> None:
     review = build_review(args.query, limit=args.limit, live=not args.offline)
     export_review(review, args.output)
 
-    print(f"Sprint 2 review generated: {args.output.resolve()}")
+    print(f"Literature review generated: {args.output.resolve()}")
     print(f"Papers ranked and summarized: {len(review.papers)}")
     for position, paper in enumerate(review.papers, start=1):
         print(f"{position}. {paper.relevance_score:.4f} - {paper.title} [{paper.source}]")

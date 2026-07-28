@@ -6,7 +6,6 @@ import math
 import re
 from pathlib import Path
 
-
 PROJECT_DIR = Path(__file__).resolve().parent
 DEFAULT_CHROMA_PATH = PROJECT_DIR / "demo_output" / "pdf_chroma"
 DEFAULT_CACHE_PATH = PROJECT_DIR / "demo_output" / "pdf_chunks_cache.json"

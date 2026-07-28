@@ -6,10 +6,9 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-
-SPRINT_DIR = Path(__file__).resolve().parent
-DEFAULT_DATA_PATH = SPRINT_DIR / "papers.json"
-DEFAULT_OUTPUT_PATH = SPRINT_DIR / "demo_output" / "review.md"
+PROJECT_DIR = Path(__file__).resolve().parent
+DEFAULT_DATA_PATH = PROJECT_DIR / "papers.json"
+DEFAULT_OUTPUT_PATH = PROJECT_DIR / "demo_output" / "review.md"
 DEFAULT_QUERY = "security risks of agentic AI systems"
 
 
@@ -165,7 +164,7 @@ def build_review(
     limit: int = 5,
     data_path: Path = DEFAULT_DATA_PATH,
 ) -> LiteratureReview:
-    """Run the Sprint 1 MVP: rank, summarize and synthesize saved paper records."""
+    """Rank, summarize, and synthesize saved paper records."""
     clean_query = query.strip()
     if not clean_query:
         raise ValueError("Please enter a research question.")
@@ -291,7 +290,7 @@ def _sentences(text: str) -> list[str]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate the offline Sprint 1 MVP review.")
+    parser = argparse.ArgumentParser(description="Generate an offline literature review.")
     parser.add_argument("query", nargs="?", default=DEFAULT_QUERY)
     parser.add_argument("--limit", type=int, default=5, choices=range(1, 6))
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT_PATH)
@@ -300,7 +299,7 @@ def main() -> None:
     review = build_review(args.query, limit=args.limit)
     export_review(review, args.output)
 
-    print(f"Sprint 1 review generated: {args.output.resolve()}")
+    print(f"Offline literature review generated: {args.output.resolve()}")
     print(f"Papers ranked and summarized: {len(review.papers)}")
     for position, paper in enumerate(review.papers, start=1):
         print(f"{position}. {paper.relevance_score:.4f} - {paper.title}")

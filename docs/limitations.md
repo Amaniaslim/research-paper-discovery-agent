@@ -1,23 +1,32 @@
 # Limitations
 
-This project is a sprint-based educational prototype.
+## Retrieval and Ranking
 
-## Current limitations
+- Live search depends on arXiv and Semantic Scholar availability and rate limits.
+- The local offline dataset is intentionally small and focused on the project
+  topic.
+- Ranking is transparent and rule-based, so it may miss papers that use
+  unexpected terminology.
 
-- PDF-RAG works best with text-based PDFs.
-- Scanned PDFs are not supported yet because OCR is not implemented.
-- Ranking is rule-based and transparent, but not ML-based yet.
-- ChromaDB is used for memory and retrieval.
-- The current local embedding is simple and deterministic for demo stability.
-- Real semantic embeddings are planned as a future improvement.
-- LLM answer generation is optional and depends on API configuration.
-- The agent supports the first research overview but does not replace reading and
-  evaluating scientific papers.
+## PDF-RAG
 
-## Future improvements
+- Source-grounded answers are limited to the retrieved chunks and may omit
+  relevant content elsewhere in a document.
+- The default local lexical embedding favors reliability and low resource usage
+  over advanced semantic matching.
+- Changing embedding models requires rebuilding the stored index.
+- Page ranges improve scalability but intentionally exclude unselected pages.
 
-- OCR support for scanned PDFs.
-- Better semantic embeddings for retrieval.
-- Stronger evaluation of ranking and retrieval quality.
-- More complete citation parsing and bibliography export.
-- Refactoring core modules into a package structure.
+## OCR
+
+- OCR is implemented as an optional adapter, not a bundled guaranteed service.
+- Tesseract requires a system binary in addition to Python packages.
+- Unlimited-OCR requires a separately operated endpoint or CLI.
+- Scans with complex layouts, handwriting, or low resolution may produce poor
+  text even when an OCR backend is available.
+
+## Academic Use
+
+- Abstract summaries and generated answers can be incomplete or inaccurate.
+- The system supports early discovery; it does not replace critical reading,
+  source verification, citation management, or scientific judgment.

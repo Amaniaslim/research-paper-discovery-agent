@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Research Paper Discovery Agent — live literature discovery, transparent ranking, PDF-RAG, OCR, grounded Q&A, memory, and export.">
+  <meta name="theme-color" content="#07111f">
+  <title>Research Paper Discovery Agent · Amani Aslim</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="Research Paper Discovery Agent home">
+      <span class="brand-mark" aria-hidden="true">R</span>
+      <span>Research Paper Discovery Agent</span>
+    </a>
+    <nav aria-label="Primary navigation">
+      <a href="#product">Product</a>
+      <a href="#workflow">Workflow</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#validation">Validation</a>
+    </nav>
+    <a class="header-link" href="https://github.com/Amaniaslim/research-paper-discovery-agent">View repository</a>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <div class="hero-glow hero-glow-one"></div>
+      <div class="hero-glow hero-glow-two"></div>
+      <div class="hero-copy">
+        <p class="eyebrow"><span></span> AI-assisted scientific discovery</p>
+        <h1>Find the<span class="desktop-space"> </span><br class="mobile-break">evidence.<br><em>Interrogate the source.</em></h1>
+        <p class="hero-lead">
+          One resilient research workspace for live paper search, explainable
+          ranking, PDF knowledge bases, and source-grounded answers.
+        </p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="https://github.com/Amaniaslim/research-paper-discovery-agent">Explore the code <span aria-hidden="true">↗</span></a>
+          <a class="button button-secondary" href="#try">Run it locally <span aria-hidden="true">↓</span></a>
+        </div>
+        <dl class="hero-stats">
+          <div><dt>4</dt><dd>resilient search modes</dd></div>
+          <div><dt>3</dt><dd>export formats</dd></div>
+          <div><dt>0</dt><dd>keys required</dd></div>
+        </dl>
+      </div>
+
+      <div class="hero-panel" aria-label="Product workflow preview">
+        <div class="panel-top">
+          <div class="window-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+          <span>research_session / active</span>
+        </div>
+        <div class="question-card">
+          <span class="mini-label">Research question</span>
+          <strong>Which security controls reduce risk in agentic RAG systems?</strong>
+        </div>
+        <div class="signal-row">
+          <span>arXiv live</span>
+          <span>6 papers</span>
+          <span>ranked</span>
+        </div>
+        <ol class="paper-list">
+          <li>
+            <span class="rank">01</span>
+            <div><strong>Agentic AI security controls</strong><small>title match · topic signal · recent</small></div>
+            <b>0.91</b>
+          </li>
+          <li>
+            <span class="rank">02</span>
+            <div><strong>Securing retrieval pipelines</strong><small>abstract match · risk signal</small></div>
+            <b>0.84</b>
+          </li>
+          <li>
+            <span class="rank">03</span>
+            <div><strong>Governance for autonomous systems</strong><small>topic match · year bonus</small></div>
+            <b>0.76</b>
+          </li>
+        </ol>
+        <div class="source-strip">
+          <span class="pulse"></span>
+          <div><strong>Grounded answer ready</strong><small>5 chunks · pages 4, 7, 12 · local fallback</small></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="problem-section section-shell">
+      <div class="section-label">01 · Problem and solution</div>
+      <div class="split-heading">
+        <h2>Literature search is fragmented.<br>This agent connects the trail.</h2>
+        <p>
+          Researchers move between search portals, PDFs, notes, and generic chat
+          tools. The Research Paper Discovery Agent keeps discovery and evidence
+          inspection in one traceable workflow.
+        </p>
+      </div>
+      <div class="problem-grid">
+        <article class="problem-card">
+          <span class="card-index">Challenge</span>
+          <h3>Too many disconnected steps</h3>
+          <p>Search results, rankings, full text, citations, notes, and exports live in separate tools.</p>
+        </article>
+        <article class="problem-card solution-card">
+          <span class="card-index">Response</span>
+          <h3>One evidence-centered workspace</h3>
+          <p>Discover papers, understand every ranking signal, ask PDFs, inspect sources, and retain the result.</p>
+        </article>
+        <article class="problem-card audience-card">
+          <span class="card-index">Designed for</span>
+          <h3>Students and researchers</h3>
+          <p>Especially useful during topic orientation, rapid evidence mapping, and early literature review work.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="product-section" id="product">
+      <div class="section-shell">
+        <div class="section-label light">02 · Product capabilities</div>
+        <div class="split-heading light">
+          <h2>From a broad question<br>to inspectable evidence.</h2>
+          <p>Each capability is useful alone. Together they form an end-to-end research assistant that still works offline.</p>
+        </div>
+        <div class="capability-grid">
+          <article class="capability feature-wide">
+            <span class="cap-icon">⌁</span>
+            <p class="cap-kicker">Discovery</p>
+            <h3>Live search with graceful fallbacks</h3>
+            <p>arXiv first, Semantic Scholar second, then local cache and embedded papers when the network cannot help.</p>
+            <div class="route" aria-label="Search fallback route">
+              <span>arXiv</span><i>→</i><span>Semantic Scholar</span><i>→</i><span>Cache</span><i>→</i><span>Offline</span>
+            </div>
+          </article>
+          <article class="capability">
+            <span class="cap-icon">◎</span>
+            <p class="cap-kicker">Ranking</p>
+            <h3>Transparent relevance</h3>
+            <p>Title, abstract, topic, and recency signals make every score explainable.</p>
+          </article>
+          <article class="capability">
+            <span class="cap-icon">▤</span>
+            <p class="cap-kicker">PDF-RAG</p>
+            <h3>Page-aware retrieval</h3>
+            <p>Top-K chunks, section filters, and neighbor expansion preserve context.</p>
+          </article>
+          <article class="capability">
+            <span class="cap-icon">◫</span>
+            <p class="cap-kicker">Large PDFs</p>
+            <h3>Selective indexing</h3>
+            <p>Process a whole document or a page range, with a warning above 100 pages.</p>
+          </article>
+          <article class="capability">
+            <span class="cap-icon">◌</span>
+            <p class="cap-kicker">OCR</p>
+            <h3>Optional scan support</h3>
+            <p>Use local Tesseract or an external Unlimited-OCR endpoint without blocking text PDFs.</p>
+          </article>
+          <article class="capability">
+            <span class="cap-icon">↗</span>
+            <p class="cap-kicker">Output</p>
+            <h3>Memory and export</h3>
+            <p>Keep local sessions and export grounded work as Markdown, CSV, or Excel.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="workflow-section section-shell" id="workflow">
+      <div class="section-label">03 · Two connected workflows</div>
+      <div class="split-heading">
+        <h2>Discover the paper.<br>Then question the full text.</h2>
+        <p>The combined Streamlit application exposes both paths without forcing an API key or external AI service.</p>
+      </div>
+
+      <div class="workflow-board">
+        <div class="workflow-column">
+          <p class="workflow-title"><span>01</span> Paper discovery</p>
+          <ol>
+            <li><b>Ask</b><span>Enter a natural-language research question.</span></li>
+            <li><b>Retrieve</b><span>Search live APIs with cache and offline fallbacks.</span></li>
+            <li><b>Normalize</b><span>Clean fields and remove duplicates.</span></li>
+            <li><b>Rank</b><span>Score transparent relevance signals.</span></li>
+            <li><b>Summarize</b><span>Use local heuristics or optional SAIA.</span></li>
+          </ol>
+        </div>
+        <div class="workflow-connector" aria-hidden="true"><span>+</span></div>
+        <div class="workflow-column accent">
+          <p class="workflow-title"><span>02</span> PDF knowledge base</p>
+          <ol>
+            <li><b>Upload</b><span>Keep private PDFs in a local ignored folder.</span></li>
+            <li><b>Extract</b><span>Read selected pages; invoke OCR only when needed.</span></li>
+            <li><b>Index</b><span>Chunk, embed, and store with metadata.</span></li>
+            <li><b>Retrieve</b><span>Filter Top-K chunks and add adjacent context.</span></li>
+            <li><b>Answer</b><span>Cite PDF, page, chunk, section, and excerpt.</span></li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="architecture-section" id="architecture">
+      <div class="section-shell">
+        <div class="section-label light">04 · Architecture</div>
+        <div class="split-heading light">
+          <h2>Optional intelligence.<br>Required resilience.</h2>
+          <p>Network search, LLM generation, OCR, semantic models, and ChromaDB can each fail independently without taking down the base workflow.</p>
+        </div>
+
+        <div class="architecture-map" role="img" aria-label="Architecture layers from Streamlit interface through workflows to optional services and local fallbacks">
+          <div class="arch-layer interface-layer">
+            <span>Interface</span>
+            <strong>Streamlit product UI</strong>
+            <small>Paper Search · PDF Knowledge Base · Memory · Export</small>
+          </div>
+          <div class="arch-lines" aria-hidden="true"><i></i><i></i><i></i></div>
+          <div class="arch-grid">
+            <div class="arch-layer">
+              <span>Discovery pipeline</span>
+              <strong>Retrieve · rank · summarize</strong>
+              <small>arXiv · Semantic Scholar · local fallbacks</small>
+            </div>
+            <div class="arch-layer">
+              <span>PDF pipeline</span>
+              <strong>Extract · chunk · retrieve</strong>
+              <small>PyMuPDF · OCR adapter · embeddings</small>
+            </div>
+            <div class="arch-layer">
+              <span>Persistence</span>
+              <strong>Remember · export</strong>
+              <small>ChromaDB · JSON · Markdown · CSV · XLSX</small>
+            </div>
+          </div>
+          <div class="arch-footer">
+            <span>Local-first defaults</span>
+            <span>SAIA optional</span>
+            <span>Keys never required</span>
+            <span>Source metadata retained</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="validation-section section-shell" id="validation">
+      <div class="section-label">05 · Engineering evidence</div>
+      <div class="split-heading">
+        <h2>Built to be tested,<br>inspected, and packaged.</h2>
+        <p>The repository includes automated checks, a smoke path, container health checks, and a deterministic release archive script.</p>
+      </div>
+      <div class="evidence-grid">
+        <article>
+          <span class="evidence-number">17</span>
+          <h3>Automated tests</h3>
+          <p>Ranking, fallback behavior, chunk metadata, retrieval, answers, and export.</p>
+        </article>
+        <article>
+          <span class="evidence-number">4</span>
+          <h3>Quality gates</h3>
+          <p>Pytest, smoke check, byte-code compilation, and Ruff linting.</p>
+        </article>
+        <article>
+          <span class="evidence-number">1</span>
+          <h3>Container health route</h3>
+          <p>Streamlit exposes <code>/_stcore/health</code> for local and Docker validation.</p>
+        </article>
+      </div>
+
+      <div class="test-terminal" aria-label="Validation commands">
+        <div class="terminal-title"><span></span><span></span><span></span><b>quality-gates.ps1</b></div>
+        <pre><code><i>$</i> python -m pytest
+<i>$</i> python demo_smoke_check.py
+<i>$</i> python -m compileall .
+<i>$</i> python -m ruff check .
+<i>$</i> docker compose config --quiet</code></pre>
+      </div>
+    </section>
+
+    <section class="limitations-section">
+      <div class="section-shell limitations-grid">
+        <div>
+          <div class="section-label light">06 · Honest boundaries</div>
+          <h2>Grounded does not mean infallible.</h2>
+        </div>
+        <ul>
+          <li><span>01</span> Rule-based ranking can miss unexpected vocabulary.</li>
+          <li><span>02</span> Answers only see retrieved chunks, not guaranteed complete context.</li>
+          <li><span>03</span> OCR quality depends on document quality and an external backend.</li>
+          <li><span>04</span> The agent supports exploration—not final scientific judgment.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="try-section section-shell" id="try">
+      <div class="try-card">
+        <p class="eyebrow"><span></span> Start with local, key-free defaults</p>
+        <h2>Turn a research question<br>into an evidence trail.</h2>
+        <div class="command"><code>python -m streamlit run app_sprint3.py</code><span>localhost:8501</span></div>
+        <div class="hero-actions">
+          <a class="button button-primary" href="https://github.com/Amaniaslim/research-paper-discovery-agent">Clone from GitHub <span aria-hidden="true">↗</span></a>
+          <a class="button button-secondary dark-button" href="https://github.com/Amaniaslim/research-paper-discovery-agent#local-setup">Read setup guide</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div>
+      <strong>Research Paper Discovery Agent</strong>
+      <span>University project by Amani Aslim · 2026</span>
+    </div>
+    <a href="https://github.com/Amaniaslim/research-paper-discovery-agent">github.com/Amaniaslim/research-paper-discovery-agent</a>
+  </footer>
+</body>
+</html>

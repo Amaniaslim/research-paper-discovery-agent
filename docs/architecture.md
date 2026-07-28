@@ -1,35 +1,39 @@
 # Architecture
 
-The project is organized as a small Streamlit prototype with separate modules for
-paper discovery, memory, and PDF-RAG.
+The Research Paper Discovery Agent combines two workflows in one Streamlit
+entrypoint, `app_sprint3.py`: live literature discovery and source-grounded
+question answering over uploaded PDFs.
 
-## Main Apps
+## Paper Discovery
 
-- `app.py`: Sprint 2 Streamlit app for live paper search, ranking, memory, and
-  Markdown export.
-- `app_sprint3.py`: Sprint 3 Streamlit app that keeps the discovery workflow and
-  adds PDF upload, indexing, retrieval, answering, sources, memory, and export.
+1. `paper_research_agent.py` expands and submits a research query.
+2. arXiv is tried first, followed by Semantic Scholar.
+3. Local cache and embedded papers provide an offline fallback.
+4. Records are normalized, deduplicated, filtered, and ranked.
+5. `review_core.py` creates heuristic summaries; SAIA can replace individual
+   summaries when configured.
+6. `memory_store.py` and `history_store.py` persist local research context.
 
-## Discovery Workflow
+## PDF Knowledge Base
 
-- `paper_research_agent.py`: live retrieval, fallback logic, normalization,
-  ranking, summaries, cache, and exports.
-- `review_core.py`: shared data classes, demo papers, baseline ranking,
-  clustering, and Markdown generation.
-- `memory_store.py`: ChromaDB memory with JSON fallback.
+1. `pdf_loader.py` saves PDFs and extracts selected pages with PyMuPDF.
+2. `src/ocr_service.py` optionally processes scanned pages with Tesseract or
+   Unlimited-OCR.
+3. `chunking.py` creates overlapping chunks with page and section metadata.
+4. `embedding_config.py` chooses the local embedding or an optional
+   sentence-transformers model.
+5. `rag_store.py` writes chunks to ChromaDB or JSON.
+6. `rag_retriever.py` performs Top-K retrieval, filtering, and neighboring-chunk
+   expansion.
+7. `rag_answer.py` asks SAIA when configured or builds an answer from retrieved
+   chunks.
+8. `export_utils.py` creates CSV and Excel source exports.
 
-## PDF-RAG Workflow
+## Resilience Boundaries
 
-- `pdf_loader.py`: saves uploaded PDFs and extracts page-wise text with PyMuPDF.
-- `chunking.py`: splits page text into overlapping chunks while preserving PDF
-  name, page number, and chunk ID.
-- `rag_store.py`: stores chunks in ChromaDB or JSON fallback and provides local
-  deterministic embeddings for stable demos.
-- `rag_retriever.py`: retrieves relevant chunks with ChromaDB or keyword fallback.
-- `rag_answer.py`: generates source-grounded answers with SAIA when configured,
-  or returns a fallback answer from retrieved chunks.
-
-## Runtime Data
-
-Generated data is written to `demo_output/` and uploaded PDFs are stored in
-`data/pdfs/`. These runtime artifacts are ignored by Git.
+- Network search, SAIA, semantic embeddings, OCR, and ChromaDB are independently
+  optional.
+- A failure in one optional integration falls back locally instead of disabling
+  the whole application.
+- Uploaded PDFs and runtime stores remain local and are excluded from Git and
+  release archives.

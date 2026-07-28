@@ -6,7 +6,7 @@ fallback so the app never crashes if a heavier model is missing.
 Behaviour:
 - The active model is read from the ``EMBEDDING_MODEL`` environment variable.
 - ``local`` / empty (the default) -> deterministic offline lexical hash embedding
-  (the original Sprint 3 behaviour, no extra dependencies).
+  with no extra dependencies.
 - Any other value -> treated as a sentence-transformers model name and loaded
   lazily. If sentence-transformers (or the model) cannot be loaded, we fall back
   to the local embedding and remember that, so the UI can show what is really

@@ -6,9 +6,9 @@ from pathlib import Path
 
 import streamlit as st
 
-SPRINT_DIR = Path(__file__).resolve().parent
-if str(SPRINT_DIR) not in sys.path:
-    sys.path.insert(0, str(SPRINT_DIR))
+PROJECT_DIR = Path(__file__).resolve().parent
+if str(PROJECT_DIR) not in sys.path:
+    sys.path.insert(0, str(PROJECT_DIR))
 
 import memory_store as memory  # noqa: E402
 import paper_research_agent as pipeline  # noqa: E402

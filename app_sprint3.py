@@ -26,7 +26,6 @@ import rag_retriever  # noqa: E402
 import rag_store  # noqa: E402
 from src import ocr_service  # noqa: E402
 
-
 PDF_DIR = PROJECT_DIR / "data" / "pdfs"
 EXPORT_PATH = PROJECT_DIR / "demo_output" / "pdf_rag_answer.md"
 CSV_EXPORT_PATH = PROJECT_DIR / "demo_output" / "sources.csv"
@@ -36,7 +35,7 @@ LARGE_PDF_THRESHOLD = 100
 
 
 def main() -> None:
-    st.set_page_config(page_title="PDF-RAG Research Agent", layout="wide")
+    st.set_page_config(page_title="Research Paper Discovery Agent", layout="wide")
     _inject_styles()
 
     pdf_count = len(_list_pdfs())
@@ -45,8 +44,8 @@ def main() -> None:
         f"""
         <section class="app-hero">
             <div>
-                <div class="eyebrow">Research Assistant</div>
-                <h1>PDF-RAG Research Agent</h1>
+                <div class="eyebrow">AI-assisted literature discovery</div>
+                <h1>Research Paper Discovery Agent</h1>
                 <p>Von der Live-Paper-Suche zum PDF-Volltext: Finde Paper, prüfe das Ranking und stelle danach Fragen mit konkreten Quellen.</p>
             </div>
             <div class="hero-meta">
@@ -62,7 +61,7 @@ def main() -> None:
     with st.sidebar:
         _render_sidebar_history()
         st.divider()
-        st.header("Demo-Workflow")
+        st.header("Research Workflow")
         st.markdown(
             "1. Forschungsfrage eingeben\n"
             "2. Paper suchen und ranken\n"
@@ -78,10 +77,10 @@ def main() -> None:
 
     tabs = st.tabs(
         [
-            "Überblick",
-            "Paper-Suche",
-            "PDF-RAG Demo",
-            "Export & Memory",
+            "Overview",
+            "Paper Search",
+            "PDF Knowledge Base",
+            "Memory & Export",
         ]
     )
 
@@ -264,7 +263,7 @@ def _render_overview() -> None:
         """
         <div class="workflow-list">
             <div><b>1.</b><span>Paper-Suche starten und Ranking prüfen.</span></div>
-            <div><b>2.</b><span>Im PDF-RAG Demo Tab ein PDF hochladen.</span></div>
+            <div><b>2.</b><span>In der PDF Knowledge Base ein PDF hochladen.</span></div>
             <div><b>3.</b><span>Index bauen und eine Frage an den Volltext stellen.</span></div>
             <div><b>4.</b><span>Quellen prüfen und Markdown exportieren.</span></div>
         </div>
@@ -418,7 +417,7 @@ def _render_paper_details(review, limit: int | None = None) -> None:
 
 
 def _render_pdf_rag_demo() -> None:
-    st.subheader("PDF-RAG Demo")
+    st.subheader("PDF Knowledge Base")
     st.caption("Upload, Index, Frage und Quellen sind hier in einem klaren Ablauf zusammengefasst.")
 
     step_cols = st.columns(4)
@@ -620,7 +619,7 @@ def _render_index_inputs(key_prefix: str, pdfs: list[Path], compact: bool) -> di
     if compact:
         chunk_size = 1000
         overlap = 150
-        st.caption("Demo-Einstellung: 1000 Zeichen pro Chunk, 150 Zeichen Overlap.")
+        st.caption("Standardeinstellung: 1000 Zeichen pro Chunk, 150 Zeichen Overlap.")
     else:
         chunk_size = st.slider(
             "Chunk size",
@@ -1399,8 +1398,8 @@ def _render_export_summary(review, answer: str, chunks: list[dict]) -> None:
     discovery_status = "Verfügbar" if review else "Nicht verfügbar"
     ranking_status = "Verfügbar" if review else "Nicht verfügbar"
     if answer and review is None:
-        discovery_status = "Not used in PDF-RAG demo"
-        ranking_status = "Not used in PDF-RAG demo"
+        discovery_status = "In diesem Workflow nicht verwendet"
+        ranking_status = "In diesem Workflow nicht verwendet"
     items = [
         ("Exportstatus", status),
         ("Format", "Markdown"),
@@ -1589,7 +1588,7 @@ def _display_source_label(source: str | None) -> str:
     clean_source = source or "n/a"
     lower_source = clean_source.lower()
     if "fallback" in lower_source:
-        return "Demo-Daten"
+        return "Offline-Fallback"
     if "cached" in lower_source:
         return "Cache"
     return clean_source

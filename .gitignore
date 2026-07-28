@@ -1,23 +1,45 @@
-.venv/
+# Secrets and local configuration
 .env
-__pycache__/
-*.pyc
-*.py[cod]
-*.log
-.DS_Store
+.env.*
+!.env.example
+.streamlit/secrets.toml
+*.pem
+*.key
+credentials*.json
 
-# Local environments and tooling
+# Python environments, caches, and build output
+.venv/
 venv/
 ENV/
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
 
-# Local runtime data and secrets
+# Editors and operating systems
+.idea/
+.vscode/
+*.code-workspace
+.DS_Store
+Thumbs.db
+*.log
+
+# Local runtime stores and exports
 chroma_db/
 exports/
 memory/
 demo_output/
 
-data/pdfs/*.pdf
+# Uploaded PDFs may contain private research material
+data/pdfs/*
 !data/pdfs/.gitkeep
+
+# Generated release archive
+release/
