@@ -11,6 +11,7 @@ fallbacks, PDF extraction and optional OCR, retrieval-augmented generation
 ## Project Links
 
 - **Code repository:** [github.com/Amaniaslim/research-paper-discovery-agent](https://github.com/Amaniaslim/research-paper-discovery-agent)
+- **Live application:** [research-paper-discovery-agent…streamlit.app](https://research-paper-discovery-agent-bysmydwzhs4nepreseaurt.streamlit.app/)
 - **Live portfolio:** [amaniaslim.github.io/research-paper-discovery-agent](https://amaniaslim.github.io/research-paper-discovery-agent/)
 - **Container package:** [GHCR package](https://github.com/users/Amaniaslim/packages/container/package/research-paper-discovery-agent)
 - **Demo Day presentation:** [Research Paper Discovery Agent (PDF)](docs/assets/Research_Paper_Discovery_Agent_Demo_Day.pdf)
@@ -294,13 +295,14 @@ research-paper-discovery-agent/
 ## Change History
 
 This table covers the complete repository history up to and including the
-current container publication. Detailed Sprint documentation is available in
+current Streamlit deployment link. Detailed Sprint documentation is available in
 [`docs/sprints/`](docs/sprints/), and every original diff remains available in
 the linked Git history.
 
 | Date | Revision | Change |
 |---|---|---|
-| 2026-07-29 | Current GHCR publication | Published the validated `linux/amd64` image as `latest` and `sha-1723fef`, linked it to the repository, and documented authenticated pulls. |
+| 2026-07-29 | Current Streamlit deployment | Added the public Streamlit Community Cloud application to the repository documentation and portfolio. |
+| 2026-07-29 | [`4ab4113`](https://github.com/Amaniaslim/research-paper-discovery-agent/commit/4ab4113) | Published the validated `linux/amd64` image as `latest` and `sha-1723fef`, linked it to the repository, and documented authenticated pulls. |
 | 2026-07-29 | [`1723fef`](https://github.com/Amaniaslim/research-paper-discovery-agent/commit/1723fef) | Made `app.py` the single entrypoint, normalized Compose and script names, reorganized historical documentation, removed obsolete placeholders, and expanded setup/deployment documentation. |
 | 2026-07-29 | [`4e79cb3`](https://github.com/Amaniaslim/research-paper-discovery-agent/commit/4e79cb3) | Added the live portfolio URL and GitHub Pages metadata. |
 | 2026-07-29 | [`9937497`](https://github.com/Amaniaslim/research-paper-discovery-agent/commit/9937497) | Added and linked the Demo Day presentation. |
@@ -324,6 +326,10 @@ The static portfolio is served from `docs/`:
 <https://amaniaslim.github.io/research-paper-discovery-agent/>
 
 ### Streamlit Community Cloud
+
+Live application:
+
+<https://research-paper-discovery-agent-bysmydwzhs4nepreseaurt.streamlit.app/>
 
 Use the following deployment settings:
 
